@@ -4,6 +4,7 @@
  */
 
 #include <node.h>
+#include <node_jsvmapi.h>
 #include <node_buffer.h>
 
 #include <leveldb/db.h>
@@ -126,9 +127,13 @@ void Database::CloseDatabase () {
 
 /* V8 exposed functions *****************************/
 
-NAN_METHOD(LevelDOWN) {
-  v8::Local<v8::String> location = info[0].As<v8::String>();
-  info.GetReturnValue().Set(Database::NewInstance(location));
+void LevelDOWN (node::js::env env, node::js::FunctionCallbackInfo info) {
+  node::js::value args[1];
+  node::js::GetCallbackArgs(info, args, 1);
+
+  node::js::value location = args[0];
+
+  node::js::SetReturnValue(env, info, Database::NewInstance(location));
 }
 
 void Database::Init () {
@@ -154,7 +159,7 @@ NAN_METHOD(Database::New) {
   info.GetReturnValue().Set(info.This());
 }
 
-v8::Local<v8::Value> Database::NewInstance (v8::Local<v8::String> &location) {
+node::js::value Database::NewInstance (node::js::value location) {
   Nan::EscapableHandleScope scope;
 
   v8::Local<v8::Object> instance;
@@ -162,10 +167,10 @@ v8::Local<v8::Value> Database::NewInstance (v8::Local<v8::String> &location) {
   v8::Local<v8::FunctionTemplate> constructorHandle =
       Nan::New<v8::FunctionTemplate>(database_constructor);
 
-  v8::Local<v8::Value> argv[] = { location };
+  v8::Local<v8::Value> argv[] = { node::js::legacy::V8LocalValue(location) };
   instance = constructorHandle->GetFunction()->NewInstance(1, argv);
 
-  return scope.Escape(instance);
+  return node::js::legacy::JsValue(scope.Escape(instance));
 }
 
 NAN_METHOD(Database::Open) {

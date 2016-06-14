@@ -4,6 +4,7 @@
  */
 
 #include <node.h>
+#include <node_jsvmapi.h>
 
 #include "leveldown.h"
 #include "database.h"
@@ -13,13 +14,14 @@
 
 namespace leveldown {
 
-NAN_METHOD(DestroyDB) {
-  Nan::HandleScope scope;
+void DestroyDB (node::js::env env, node::js::FunctionCallbackInfo info) {
+  node::js::value args[2];
+  node::js::GetCallbackArgs(info, args, 2);
 
-  Nan::Utf8String* location = new Nan::Utf8String(info[0]);
+  Nan::Utf8String* location = new Nan::Utf8String(node::js::legacy::V8LocalValue(args[0]));
 
   Nan::Callback* callback = new Nan::Callback(
-      v8::Local<v8::Function>::Cast(info[1]));
+      v8::Local<v8::Function>::Cast(node::js::legacy::V8LocalValue(args[1])));
 
   DestroyWorker* worker = new DestroyWorker(
       location
@@ -28,16 +30,17 @@ NAN_METHOD(DestroyDB) {
 
   Nan::AsyncQueueWorker(worker);
 
-  info.GetReturnValue().SetUndefined();
+  node::js::SetReturnValue(env, info, node::js::GetUndefined(env));
 }
 
-NAN_METHOD(RepairDB) {
-  Nan::HandleScope scope;
+void RepairDB (node::js::env env, node::js::FunctionCallbackInfo info) {
+  node::js::value args[2];
+  node::js::GetCallbackArgs(info, args, 2);
 
-  Nan::Utf8String* location = new Nan::Utf8String(info[0]);
+  Nan::Utf8String* location = new Nan::Utf8String(node::js::legacy::V8LocalValue(args[0]));
 
   Nan::Callback* callback = new Nan::Callback(
-      v8::Local<v8::Function>::Cast(info[1]));
+      v8::Local<v8::Function>::Cast(node::js::legacy::V8LocalValue(args[1])));
 
   RepairWorker* worker = new RepairWorker(
       location
@@ -46,28 +49,28 @@ NAN_METHOD(RepairDB) {
 
   Nan::AsyncQueueWorker(worker);
 
-  info.GetReturnValue().SetUndefined();
+  node::js::SetReturnValue(env, info, node::js::GetUndefined(env));
 }
 
-void Init (v8::Local<v8::Object> target) {
+void NewInit(node::js::env env, node::js::value target, node::js::value module) {
   Database::Init();
   leveldown::Iterator::Init();
   leveldown::Batch::Init();
 
-  v8::Local<v8::Function> leveldown =
-      Nan::New<v8::FunctionTemplate>(LevelDOWN)->GetFunction();
+  node::js::propertyname nameDestroy = node::js::PropertyName(env, "destroy");
+  node::js::propertyname nameRepair = node::js::PropertyName(env, "repair");
+  node::js::propertyname nameLeveldown = node::js::PropertyName(env, "leveldown");
 
-  leveldown->Set(
-      Nan::New("destroy").ToLocalChecked()
-    , Nan::New<v8::FunctionTemplate>(DestroyDB)->GetFunction()
-  );
+  node::js::value leveldown = node::js::CreateFunction(env, LevelDOWN);
 
-  leveldown->Set(
-      Nan::New("repair").ToLocalChecked()
-    , Nan::New<v8::FunctionTemplate>(RepairDB)->GetFunction()
-  );
+  node::js::SetProperty(env, leveldown, nameDestroy, node::js::CreateFunction(env, DestroyDB));
+  node::js::SetProperty(env, leveldown, nameRepair, node::js::CreateFunction(env, RepairDB));
 
-  target->Set(Nan::New("leveldown").ToLocalChecked(), leveldown);
+  node::js::SetProperty(env, target, nameLeveldown, leveldown);
+}
+
+void Init (v8::Local<v8::Object> target, v8::Local<v8::Object> module) {
+  node::js::legacy::WorkaroundNewModuleInit(target, module, NewInit);
 }
 
 NODE_MODULE(leveldown, Init)

@@ -9,6 +9,7 @@
 #include <map>
 #include <vector>
 #include <node.h>
+#include <node_jsvmapi.h>
 
 #include <leveldb/cache.h>
 #include <leveldb/db.h>
@@ -20,7 +21,7 @@
 
 namespace leveldown {
 
-NAN_METHOD(LevelDOWN);
+void LevelDOWN (node::js::env env, node::js::FunctionCallbackInfo info);
 
 struct Reference {
   Nan::Persistent<v8::Object> handle;
@@ -46,7 +47,7 @@ static inline void ClearReferences (std::vector<Reference *> *references) {
 class Database : public Nan::ObjectWrap {
 public:
   static void Init ();
-  static v8::Local<v8::Value> NewInstance (v8::Local<v8::String> &location);
+  static node::js::value NewInstance (node::js::value location);
 
   leveldb::Status OpenDatabase (leveldb::Options* options);
   leveldb::Status PutToDatabase (
