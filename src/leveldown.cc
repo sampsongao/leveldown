@@ -16,7 +16,7 @@ namespace leveldown {
 
 void DestroyDB (node::js::env env, node::js::FunctionCallbackInfo info) {
   node::js::value args[2];
-  node::js::GetCallbackArgs(info, args, 2);
+  node::js::GetCallbackArgs(env, info, args, 2);
 
   Nan::Utf8String* location = new Nan::Utf8String(node::js::legacy::V8LocalValue(args[0]));
 
@@ -35,7 +35,7 @@ void DestroyDB (node::js::env env, node::js::FunctionCallbackInfo info) {
 
 void RepairDB (node::js::env env, node::js::FunctionCallbackInfo info) {
   node::js::value args[2];
-  node::js::GetCallbackArgs(info, args, 2);
+  node::js::GetCallbackArgs(env, info, args, 2);
 
   Nan::Utf8String* location = new Nan::Utf8String(node::js::legacy::V8LocalValue(args[0]));
 

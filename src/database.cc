@@ -129,7 +129,7 @@ void Database::CloseDatabase () {
 
 void LevelDOWN (node::js::env env, node::js::FunctionCallbackInfo info) {
   node::js::value args[1];
-  node::js::GetCallbackArgs(info, args, 1);
+  node::js::GetCallbackArgs(env, info, args, 1);
 
   node::js::value location = args[0];
 
