@@ -20,10 +20,10 @@
 
 namespace leveldown {
 
-static Nan::Persistent<v8::FunctionTemplate> database_constructor;
+static node::js::persistent database_constructor;
 
-Database::Database (const v8::Local<v8::Value>& from)
-  : location(new Nan::Utf8String(from))
+Database::Database (node::js::value from)
+  : location(new Nan::Utf8String(node::js::legacy::V8LocalValue(from)))
   , db(NULL)
   , currentIteratorId(0)
   , pendingCloseWorker(NULL)
@@ -136,27 +136,70 @@ void LevelDOWN (node::js::env env, node::js::FunctionCallbackInfo info) {
   node::js::SetReturnValue(env, info, Database::NewInstance(location));
 }
 
-void Database::Init () {
-  v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(Database::New);
-  database_constructor.Reset(tpl);
-  tpl->SetClassName(Nan::New("Database").ToLocalChecked());
-  tpl->InstanceTemplate()->SetInternalFieldCount(1);
-  Nan::SetPrototypeMethod(tpl, "open", Database::Open);
-  Nan::SetPrototypeMethod(tpl, "close", Database::Close);
-  Nan::SetPrototypeMethod(tpl, "put", Database::Put);
-  Nan::SetPrototypeMethod(tpl, "get", Database::Get);
-  Nan::SetPrototypeMethod(tpl, "del", Database::Delete);
-  Nan::SetPrototypeMethod(tpl, "batch", Database::Batch);
-  Nan::SetPrototypeMethod(tpl, "approximateSize", Database::ApproximateSize);
-  Nan::SetPrototypeMethod(tpl, "getProperty", Database::GetProperty);
-  Nan::SetPrototypeMethod(tpl, "iterator", Database::Iterator);
+void Database::Init (node::js::env env) {
+  node::js::value ctor = node::js::CreateConstructorForWrap(env, Database::New);
+  node::js::SetFunctionName(env, ctor, node::js::PropertyName(env, "Database"));
+  // Was this never used?
+  //tpl->InstanceTemplate()->SetInternalFieldCount(1);
+  node::js::value proto = node::js::GetProperty(env, ctor, node::js::PropertyName(env, "prototype"));
+
+  // Concern (ianhall): This verbose setting of functions on the prototype object defeats V8's Function/ObjectTemplate optimization
+  // Also very chatty.  Creating a constructor and setting methods on its prototype object should be a single API.
+
+  node::js::value fnOpen = node::js::CreateFunction(env, Database::Open);
+  node::js::SetFunctionName(env, fnOpen, "open");
+  node::js::SetProperty(env, proto, node::js::PropertyName(env, "open"), fnOpen);
+
+  node::js::value fnClose = node::js::CreateFunction(env, Database::Close);
+  node::js::SetFunctionName(env, fnClose, "close");
+  node::js::SetProperty(env, proto, node::js::PropertyName(env, "close"), fnClose);
+
+  node::js::value fnPut = node::js::CreateFunction(env, Database::Put);
+  node::js::SetFunctionName(env, fnPut, "put");
+  node::js::SetProperty(env, proto, node::js::PropertyName(env, "put"), fnPut);
+
+  node::js::value fnGet = node::js::CreateFunction(env, Database::Get);
+  node::js::SetFunctionName(env, fnGet, "get");
+  node::js::SetProperty(env, proto, node::js::PropertyName(env, "get"), fnGet);
+
+  node::js::value fnDelete = node::js::CreateFunction(env, Database::Delete);
+  node::js::SetFunctionName(env, fnDelete, "del");
+  node::js::SetProperty(env, proto, node::js::PropertyName(env, "del"), fnDelete);
+
+  node::js::value fnBatch = node::js::CreateFunction(env, Database::Batch);
+  node::js::SetFunctionName(env, fnBatch, "batch");
+  node::js::SetProperty(env, proto, node::js::PropertyName(env, "batch"), fnBatch);
+
+  node::js::value fnApproximateSize = node::js::CreateFunction(env, Database::ApproximateSize);
+  node::js::SetFunctionName(env, fnApproximateSize, "approximateSize");
+  node::js::SetProperty(env, proto, node::js::PropertyName(env, "approximateSize"), fnApproximateSize);
+
+  node::js::value fnGetProperty = node::js::CreateFunction(env, Database::GetProperty);
+  node::js::SetFunctionName(env, fnGetProperty, "getProperty");
+  node::js::SetProperty(env, proto, node::js::PropertyName(env, "getProperty"), fnGetProperty);
+
+  node::js::value fnIterator = node::js::CreateFunction(env, Database::Iterator);
+  node::js::SetFunctionName(env, fnIterator, "iterator");
+  node::js::SetProperty(env, proto, node::js::PropertyName(env, "iterator"), fnIterator);
+
+  database_constructor = node::js::CreatePersistent(env, ctor);
 }
 
-NAN_METHOD(Database::New) {
-  Database* obj = new Database(info[0]);
-  obj->Wrap(info.This());
+void Database::Destructor (void* obj) {
+  Database* db = static_cast<Database*>(obj);
+  delete db;
+}
 
-  info.GetReturnValue().Set(info.This());
+NAPI_METHOD(Database::New) {
+  node::js::value args[1];
+  node::js::GetCallbackArgs(env, info, args, 1);
+  node::js::value thisObj = node::js::GetCallbackObject(env, info);
+
+  Database* obj = new Database(args[0]);
+
+  node::js::Wrap(env, thisObj, obj, Database::Destructor);
+
+  node::js::SetReturnValue(env, info, thisObj);
 }
 
 node::js::value Database::NewInstance (node::js::value location) {
@@ -164,17 +207,19 @@ node::js::value Database::NewInstance (node::js::value location) {
 
   v8::Local<v8::Object> instance;
 
-  v8::Local<v8::FunctionTemplate> constructorHandle =
-      Nan::New<v8::FunctionTemplate>(database_constructor);
+  v8::Local<v8::Function> constructorHandle =
+      node::js::legacy::V8PersistentValue(database_constructor)->As<v8::Function>().Get(v8::Isolate::GetCurrent());
 
   v8::Local<v8::Value> argv[] = { node::js::legacy::V8LocalValue(location) };
-  instance = constructorHandle->GetFunction()->NewInstance(1, argv);
+  instance = constructorHandle->NewInstance(1, argv);
 
   return node::js::legacy::JsValue(scope.Escape(instance));
 }
 
-NAN_METHOD(Database::Open) {
-  LD_METHOD_SETUP_COMMON(open, 0, 1)
+NAPI_METHOD(Database::Open) {
+  LD_METHOD_SETUP_COMMON_NAPI(open, 0, 1)
+
+  LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
 
   bool createIfMissing = BooleanOptionValue(optionsObj, "createIfMissing", true);
   bool errorIfExists = BooleanOptionValue(optionsObj, "errorIfExists");
@@ -211,24 +256,26 @@ NAN_METHOD(Database::Open) {
     , blockRestartInterval
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = info.This();
+  v8::Local<v8::Object> _this = info_This__;
   worker->SaveToPersistent("database", _this);
   Nan::AsyncQueueWorker(worker);
 }
 
 // for an empty callback to iterator.end()
-NAN_METHOD(EmptyMethod) {
+NAPI_METHOD(EmptyMethod) {
 }
 
-NAN_METHOD(Database::Close) {
-  LD_METHOD_SETUP_COMMON_ONEARG(close)
+NAPI_METHOD(Database::Close) {
+  LD_METHOD_SETUP_COMMON_ONEARG_NAPI(close)
+
+  LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
 
   CloseWorker* worker = new CloseWorker(
       database
     , new Nan::Callback(callback)
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = info.This();
+  v8::Local<v8::Object> _this = info_This__;
   worker->SaveToPersistent("database", _this);
 
   if (!database->iterators.empty()) {
@@ -256,7 +303,8 @@ NAN_METHOD(Database::Close) {
               v8::Local<v8::Function>::Cast(iterator->handle()->Get(
                   Nan::New<v8::String>("end").ToLocalChecked()));
           v8::Local<v8::Value> argv[] = {
-              Nan::New<v8::FunctionTemplate>(EmptyMethod)->GetFunction() // empty callback
+              node::js::legacy::V8LocalValue(
+                  node::js::CreateFunction(env, EmptyMethod)) // empty callback
           };
           Nan::MakeCallback(
               iterator->handle()
@@ -271,11 +319,13 @@ NAN_METHOD(Database::Close) {
   }
 }
 
-NAN_METHOD(Database::Put) {
-  LD_METHOD_SETUP_COMMON(put, 2, 3)
+NAPI_METHOD(Database::Put) {
+  LD_METHOD_SETUP_COMMON_NAPI(put, 2, 3)
 
-  v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
-  v8::Local<v8::Object> valueHandle = info[1].As<v8::Object>();
+  LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
+
+  v8::Local<v8::Object> keyHandle = node::js::legacy::V8LocalValue(args[0]).As<v8::Object>();
+  v8::Local<v8::Object> valueHandle = node::js::legacy::V8LocalValue(args[1]).As<v8::Object>();
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
   LD_STRING_OR_BUFFER_TO_SLICE(value, valueHandle, value);
 
@@ -292,15 +342,17 @@ NAN_METHOD(Database::Put) {
   );
 
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = info.This();
+  v8::Local<v8::Object> _this = info_This__;
   worker->SaveToPersistent("database", _this);
   Nan::AsyncQueueWorker(worker);
 }
 
-NAN_METHOD(Database::Get) {
-  LD_METHOD_SETUP_COMMON(get, 1, 2)
+NAPI_METHOD(Database::Get) {
+  LD_METHOD_SETUP_COMMON_NAPI(get, 1, 2)
 
-  v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
+  LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
+
+  v8::Local<v8::Object> keyHandle = node::js::legacy::V8LocalValue(args[0]).As<v8::Object>();
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
 
   bool asBuffer = BooleanOptionValue(optionsObj, "asBuffer", true);
@@ -315,15 +367,17 @@ NAN_METHOD(Database::Get) {
     , keyHandle
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = info.This();
+  v8::Local<v8::Object> _this = info_This__;
   worker->SaveToPersistent("database", _this);
   Nan::AsyncQueueWorker(worker);
 }
 
-NAN_METHOD(Database::Delete) {
-  LD_METHOD_SETUP_COMMON(del, 1, 2)
+NAPI_METHOD(Database::Delete) {
+  LD_METHOD_SETUP_COMMON_NAPI(del, 1, 2)
 
-  v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
+  LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
+
+  v8::Local<v8::Object> keyHandle = node::js::legacy::V8LocalValue(args[0]).As<v8::Object>();
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
 
   bool sync = BooleanOptionValue(optionsObj, "sync");
@@ -336,26 +390,35 @@ NAN_METHOD(Database::Delete) {
     , keyHandle
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = info.This();
+  v8::Local<v8::Object> _this = info_This__;
   worker->SaveToPersistent("database", _this);
   Nan::AsyncQueueWorker(worker);
 }
 
-NAN_METHOD(Database::Batch) {
-  if ((info.Length() == 0 || info.Length() == 1) && !info[0]->IsArray()) {
-    v8::Local<v8::Object> optionsObj;
-    if (info.Length() > 0 && info[0]->IsObject()) {
-      optionsObj = info[0].As<v8::Object>();
+NAPI_METHOD(Database::Batch) {
+  {
+    node::js::value args[1];
+    node::js::GetCallbackArgs(env, info, args, 1);
+    int argsLength = node::js::GetCallbackArgsLength(env, info);
+    v8::Local<v8::Value> arg0 = node::js::legacy::V8LocalValue(args[0]);
+    if ((argsLength == 0 || argsLength == 1) && !arg0->IsArray()) {
+      v8::Local<v8::Object> optionsObj;
+      if (argsLength > 0 && arg0->IsObject()) {
+        optionsObj = arg0.As<v8::Object>();
+      }
+      v8::Local<v8::Object> info_This__ = node::js::legacy::V8LocalValue(node::js::GetCallbackObject(env, info)).As<v8::Object>();
+      node::js::SetReturnValue(env, info, node::js::legacy::JsValue(Batch::NewInstance(info_This__, optionsObj)));
+      return;
     }
-    info.GetReturnValue().Set(Batch::NewInstance(info.This(), optionsObj));
-    return;
   }
 
-  LD_METHOD_SETUP_COMMON(batch, 1, 2);
+  LD_METHOD_SETUP_COMMON_NAPI(batch, 1, 2);
+
+  LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
 
   bool sync = BooleanOptionValue(optionsObj, "sync");
 
-  v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(info[0]);
+  v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(node::js::legacy::V8LocalValue(args[0]));
 
   leveldb::WriteBatch* batch = new leveldb::WriteBatch();
   bool hasData = false;
@@ -399,7 +462,7 @@ NAN_METHOD(Database::Batch) {
       , sync
     );
     // persist to prevent accidental GC
-    v8::Local<v8::Object> _this = info.This();
+    v8::Local<v8::Object> _this = info_This__;
     worker->SaveToPersistent("database", _this);
     Nan::AsyncQueueWorker(worker);
   } else {
@@ -407,11 +470,13 @@ NAN_METHOD(Database::Batch) {
   }
 }
 
-NAN_METHOD(Database::ApproximateSize) {
-  v8::Local<v8::Object> startHandle = info[0].As<v8::Object>();
-  v8::Local<v8::Object> endHandle = info[1].As<v8::Object>();
+NAPI_METHOD(Database::ApproximateSize) {
+  LD_METHOD_SETUP_COMMON_NAPI(approximateSize, -1, 2)
 
-  LD_METHOD_SETUP_COMMON(approximateSize, -1, 2)
+  LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
+
+  v8::Local<v8::Object> startHandle = node::js::legacy::V8LocalValue(args[0]).As<v8::Object>();
+  v8::Local<v8::Object> endHandle = node::js::legacy::V8LocalValue(args[1]).As<v8::Object>();
 
   LD_STRING_OR_BUFFER_TO_SLICE(start, startHandle, start)
   LD_STRING_OR_BUFFER_TO_SLICE(end, endHandle, end)
@@ -425,19 +490,24 @@ NAN_METHOD(Database::ApproximateSize) {
     , endHandle
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = info.This();
+  v8::Local<v8::Object> _this = info_This__;
   worker->SaveToPersistent("database", _this);
   Nan::AsyncQueueWorker(worker);
 }
 
-NAN_METHOD(Database::GetProperty) {
-  v8::Local<v8::Value> propertyHandle = info[0].As<v8::Object>();
+NAPI_METHOD(Database::GetProperty) {
+  node::js::value args[1];
+  node::js::GetCallbackArgs(env, info, args, 1);
+  v8::Local<v8::Value> arg0 = node::js::legacy::V8LocalValue(args[0]);
+  v8::Local<v8::Object> info_This__ = node::js::legacy::V8LocalValue(node::js::GetCallbackObject(env, info)).As<v8::Object>();
+
+  v8::Local<v8::Value> propertyHandle = arg0.As<v8::Object>();
   v8::Local<v8::Function> callback; // for LD_STRING_OR_BUFFER_TO_SLICE
 
   LD_STRING_OR_BUFFER_TO_SLICE(property, propertyHandle, property)
 
   leveldown::Database* database =
-      Nan::ObjectWrap::Unwrap<leveldown::Database>(info.This());
+      Nan::ObjectWrap::Unwrap<leveldown::Database>(info_This__);
 
   std::string* value = new std::string();
   database->GetPropertyFromDatabase(property, value);
@@ -446,15 +516,21 @@ NAN_METHOD(Database::GetProperty) {
   delete value;
   delete[] property.data();
 
-  info.GetReturnValue().Set(returnValue);
+  node::js::SetReturnValue(env, info, node::js::legacy::JsValue(returnValue));
 }
 
-NAN_METHOD(Database::Iterator) {
-  Database* database = Nan::ObjectWrap::Unwrap<Database>(info.This());
+NAPI_METHOD(Database::Iterator) {
+  node::js::value args[1];
+  node::js::GetCallbackArgs(env, info, args, 1);
+  int argsLength = node::js::GetCallbackArgsLength(env, info);
+  v8::Local<v8::Value> arg0 = node::js::legacy::V8LocalValue(args[0]);
+  v8::Local<v8::Object> info_This__ = node::js::legacy::V8LocalValue(node::js::GetCallbackObject(env, info)).As<v8::Object>();
+
+  Database* database = Nan::ObjectWrap::Unwrap<Database>(info_This__);
 
   v8::Local<v8::Object> optionsObj;
-  if (info.Length() > 0 && info[0]->IsObject()) {
-    optionsObj = v8::Local<v8::Object>::Cast(info[0]);
+  if (argsLength > 0 && arg0->IsObject()) {
+    optionsObj = v8::Local<v8::Object>::Cast(arg0);
   }
 
   // each iterator gets a unique id for this Database, so we can
@@ -462,7 +538,7 @@ NAN_METHOD(Database::Iterator) {
   uint32_t id = database->currentIteratorId++;
   v8::TryCatch try_catch;
   v8::Local<v8::Object> iteratorHandle = Iterator::NewInstance(
-      info.This()
+      info_This__
     , Nan::New<v8::Number>(id)
     , optionsObj
   );
@@ -486,7 +562,7 @@ NAN_METHOD(Database::Iterator) {
       (id, persistent));
   */
 
-  info.GetReturnValue().Set(iteratorHandle);
+  node::js::SetReturnValue(env, info, node::js::legacy::JsValue(iteratorHandle));
 }
 
 

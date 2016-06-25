@@ -53,7 +53,7 @@ void RepairDB (node::js::env env, node::js::FunctionCallbackInfo info) {
 }
 
 void NewInit(node::js::env env, node::js::value target, node::js::value module) {
-  Database::Init();
+  Database::Init(env);
   leveldown::Iterator::Init();
   leveldown::Batch::Init();
 

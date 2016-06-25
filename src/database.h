@@ -46,7 +46,7 @@ static inline void ClearReferences (std::vector<Reference *> *references) {
 
 class Database : public Nan::ObjectWrap {
 public:
-  static void Init ();
+  static void Init (node::js::env env);
   static node::js::value NewInstance (node::js::value location);
 
   leveldb::Status OpenDatabase (leveldb::Options* options);
@@ -76,7 +76,7 @@ public:
   void CloseDatabase ();
   void ReleaseIterator (uint32_t id);
 
-  Database (const v8::Local<v8::Value>& from);
+  Database (node::js::value from);
   ~Database ();
 
 private:
@@ -92,17 +92,19 @@ private:
   static void WriteDoing(uv_work_t *req);
   static void WriteAfter(uv_work_t *req);
 
-  static NAN_METHOD(New);
-  static NAN_METHOD(Open);
-  static NAN_METHOD(Close);
-  static NAN_METHOD(Put);
-  static NAN_METHOD(Delete);
-  static NAN_METHOD(Get);
-  static NAN_METHOD(Batch);
-  static NAN_METHOD(Write);
-  static NAN_METHOD(Iterator);
-  static NAN_METHOD(ApproximateSize);
-  static NAN_METHOD(GetProperty);
+  static void Destructor (void* obj);
+
+  static NAPI_METHOD(New);
+  static NAPI_METHOD(Open);
+  static NAPI_METHOD(Close);
+  static NAPI_METHOD(Put);
+  static NAPI_METHOD(Delete);
+  static NAPI_METHOD(Get);
+  static NAPI_METHOD(Batch);
+  static NAPI_METHOD(Write);
+  static NAPI_METHOD(Iterator);
+  static NAPI_METHOD(ApproximateSize);
+  static NAPI_METHOD(GetProperty);
 };
 
 } // namespace leveldown
