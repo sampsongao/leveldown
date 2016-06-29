@@ -133,54 +133,54 @@ static inline void DisposeStringOrBufferFromSlice(
 // TODO (ianhall): We need a CreateError() API to use instead of CreateTypeError()
 // NAPI NOTE (ianhall): API should have convenience for throwing new errors of different types with given string message (copy Nan API)
 #define LD_METHOD_SETUP_COMMON_NAPI(name, optionPos, callbackPos)              \
-  int argsLength = node::js::GetCallbackArgsLength(env, info);                 \
+  int argsLength = napi_get_cb_args_length(env, info);                         \
   if (argsLength == 0) {                                                       \
-    return node::js::ThrowError(env,                                           \
-      node::js::CreateTypeError(env,                                           \
-        node::js::CreateString(env, #name "() requires a callback argument")));\
+    return napi_throw_error(env,                                               \
+      napi_create_type_error(env,                                              \
+        napi_create_string(env, #name "() requires a callback argument")));    \
   }                                                                            \
-  node::js::value args[MAX(optionPos+1, callbackPos+1)];                       \
-  node::js::GetCallbackArgs(env, info, args, MAX(optionPos+1, callbackPos+1)); \
-  node::js::value thisObj = node::js::GetCallbackObject(env, info);            \
+  napi_value args[MAX(optionPos+1, callbackPos+1)];                            \
+  napi_get_cb_args(env, info, args, MAX(optionPos+1, callbackPos+1));          \
+  napi_value thisObj = napi_get_cb_object(env, info);                          \
   leveldown::Database* database =                                              \
-    static_cast<leveldown::Database*>(node::js::Unwrap(env, thisObj));         \
-  node::js::value optionsObjNapi = nullptr;                                    \
-  node::js::value callbackNapi = nullptr;                                      \
+    static_cast<leveldown::Database*>(napi_unwrap(env, thisObj));              \
+  napi_value optionsObjNapi = nullptr;                                         \
+  napi_value callbackNapi = nullptr;                                           \
   if (optionPos == -1 &&                                                       \
-      node::js::legacy::V8LocalValue(args[callbackPos])->IsFunction()) {       \
+      V8LocalValue(args[callbackPos])->IsFunction()) {       \
     callbackNapi = args[callbackPos];                                          \
   } else if (optionPos != -1 &&                                                \
-      node::js::legacy::V8LocalValue(args[callbackPos - 1])->IsFunction()) {   \
+      V8LocalValue(args[callbackPos - 1])->IsFunction()) {   \
     callbackNapi = args[callbackPos - 1];                                      \
   } else if (optionPos != -1                                                   \
-        && node::js::legacy::V8LocalValue(args[optionPos])->IsObject()         \
-        && node::js::legacy::V8LocalValue(args[callbackPos])->IsFunction()) {  \
+        && V8LocalValue(args[optionPos])->IsObject()         \
+        && V8LocalValue(args[callbackPos])->IsFunction()) {  \
     optionsObjNapi = args[optionPos];                                          \
     callbackNapi = args[callbackPos];                                          \
   } else {                                                                     \
-    return node::js::ThrowError(env,                                           \
-      node::js::CreateTypeError(env,                                           \
-        node::js::CreateString(env, #name "() requires a callback argument")));\
+    return napi_throw_error(env,                                               \
+      napi_create_type_error(env,                                              \
+        napi_create_string(env, #name "() requires a callback argument")));    \
   }
 
 // TODO (ianhall): This is temporary, remove when no longer used (and rename objectObjNapi, callbackNapi above back to objectObj, callback)
 #define LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8                                 \
   v8::Local<v8::Object> info_This__ =                                          \
-    node::js::legacy::V8LocalValue(thisObj).As<v8::Object>();                  \
+    V8LocalValue(thisObj).As<v8::Object>();                  \
   v8::Local<v8::Object> optionsObj;                                            \
   v8::Local<v8::Function> callback;                                            \
   if (optionsObjNapi != nullptr) {                                             \
-    optionsObj = node::js::legacy::V8LocalValue(optionsObjNapi).As<v8::Object>();\
+    optionsObj = V8LocalValue(optionsObjNapi).As<v8::Object>();\
   }                                                                            \
   if (callbackNapi != nullptr) {                                               \
-    callback = node::js::legacy::V8LocalValue(callbackNapi).As<v8::Function>();\
+    callback = V8LocalValue(callbackNapi).As<v8::Function>();\
   }
 
 #define LD_METHOD_SETUP_COMMON_ONEARG(name) LD_METHOD_SETUP_COMMON(name, -1, 0)
 #define LD_METHOD_SETUP_COMMON_ONEARG_NAPI(name) LD_METHOD_SETUP_COMMON_NAPI(name, -1, 0)
 
 // TODO (ianhall): This should be moved to node_jsvmapi.h (or elsewhere?)
-#define NAPI_METHOD(name)                                                       \
-    void name(node::js::env env, node::js::FunctionCallbackInfo info)
+#define NAPI_METHOD(name)                                                      \
+    void name(napi_env env, napi_func_cb_info info)
 
 #endif

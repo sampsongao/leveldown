@@ -20,10 +20,10 @@
 
 namespace leveldown {
 
-static node::js::persistent database_constructor;
+static napi_persistent database_constructor;
 
-Database::Database (node::js::value from)
-  : location(new Nan::Utf8String(node::js::legacy::V8LocalValue(from)))
+Database::Database (napi_value from)
+  : location(new Nan::Utf8String(V8LocalValue(from)))
   , db(NULL)
   , currentIteratorId(0)
   , pendingCloseWorker(NULL)
@@ -127,62 +127,71 @@ void Database::CloseDatabase () {
 
 /* V8 exposed functions *****************************/
 
-void LevelDOWN (node::js::env env, node::js::FunctionCallbackInfo info) {
-  node::js::value args[1];
-  node::js::GetCallbackArgs(env, info, args, 1);
+void LevelDOWN (napi_env env, napi_func_cb_info info) {
+  napi_value args[1];
+  napi_get_cb_args(env, info, args, 1);
 
-  node::js::value location = args[0];
+  napi_value location = args[0];
 
-  node::js::SetReturnValue(env, info, Database::NewInstance(location));
+  napi_set_return_value(env, info, Database::NewInstance(location));
 }
 
-void Database::Init (node::js::env env) {
-  node::js::value ctor = node::js::CreateConstructorForWrap(env, Database::New);
-  node::js::SetFunctionName(env, ctor, node::js::PropertyName(env, "Database"));
+void Database::Init (napi_env env) {
+  napi_value ctor = napi_create_constructor_for_wrap(env, Database::New);
+  napi_set_function_name(env, ctor, napi_proterty_name(env, "Database"));
   // Was this never used?
   //tpl->InstanceTemplate()->SetInternalFieldCount(1);
-  node::js::value proto = node::js::GetProperty(env, ctor, node::js::PropertyName(env, "prototype"));
+  napi_value proto = napi_get_property(env, ctor, napi_proterty_name(env, "prototype"));
 
   // Concern (ianhall): This verbose setting of functions on the prototype object defeats V8's Function/ObjectTemplate optimization
   // Also very chatty.  Creating a constructor and setting methods on its prototype object should be a single API.
 
-  node::js::value fnOpen = node::js::CreateFunction(env, Database::Open);
-  node::js::SetFunctionName(env, fnOpen, "open");
-  node::js::SetProperty(env, proto, node::js::PropertyName(env, "open"), fnOpen);
+  napi_value fnOpen = napi_create_function(env, Database::Open);
+  napi_propertyname pnOpen = napi_proterty_name(env, "open");
+  napi_set_function_name(env, fnOpen, pnOpen);
+  napi_set_property(env, proto, pnOpen, fnOpen);
 
-  node::js::value fnClose = node::js::CreateFunction(env, Database::Close);
-  node::js::SetFunctionName(env, fnClose, "close");
-  node::js::SetProperty(env, proto, node::js::PropertyName(env, "close"), fnClose);
+  napi_value fnClose = napi_create_function(env, Database::Close);
+  napi_propertyname pnClose = napi_proterty_name(env, "close");
+  napi_set_function_name(env, fnClose, pnClose);
+  napi_set_property(env, proto, pnClose, fnClose);
 
-  node::js::value fnPut = node::js::CreateFunction(env, Database::Put);
-  node::js::SetFunctionName(env, fnPut, "put");
-  node::js::SetProperty(env, proto, node::js::PropertyName(env, "put"), fnPut);
+  napi_value fnPut = napi_create_function(env, Database::Put);
+  napi_propertyname pnPut = napi_proterty_name(env, "put");
+  napi_set_function_name(env, fnPut, pnPut);
+  napi_set_property(env, proto, pnPut, fnPut);
 
-  node::js::value fnGet = node::js::CreateFunction(env, Database::Get);
-  node::js::SetFunctionName(env, fnGet, "get");
-  node::js::SetProperty(env, proto, node::js::PropertyName(env, "get"), fnGet);
+  napi_value fnGet = napi_create_function(env, Database::Get);
+  napi_propertyname pnGet = napi_proterty_name(env, "get");
+  napi_set_function_name(env, fnGet, pnGet);
+  napi_set_property(env, proto, pnGet, fnGet);
 
-  node::js::value fnDelete = node::js::CreateFunction(env, Database::Delete);
-  node::js::SetFunctionName(env, fnDelete, "del");
-  node::js::SetProperty(env, proto, node::js::PropertyName(env, "del"), fnDelete);
+  napi_value fnDelete = napi_create_function(env, Database::Delete);
+  napi_propertyname pnDel = napi_proterty_name(env, "del");
+  napi_set_function_name(env, fnDelete, pnDel);
+  napi_set_property(env, proto, pnDel, fnDelete);
 
-  node::js::value fnBatch = node::js::CreateFunction(env, Database::Batch);
-  node::js::SetFunctionName(env, fnBatch, "batch");
-  node::js::SetProperty(env, proto, node::js::PropertyName(env, "batch"), fnBatch);
+  napi_value fnBatch = napi_create_function(env, Database::Batch);
+  napi_propertyname pnBatch = napi_proterty_name(env, "batch");
+  napi_set_function_name(env, fnBatch, pnBatch);
+  napi_set_property(env, proto, pnBatch, fnBatch);
 
-  node::js::value fnApproximateSize = node::js::CreateFunction(env, Database::ApproximateSize);
-  node::js::SetFunctionName(env, fnApproximateSize, "approximateSize");
-  node::js::SetProperty(env, proto, node::js::PropertyName(env, "approximateSize"), fnApproximateSize);
+  napi_value fnApproximateSize = napi_create_function(env, Database::ApproximateSize);
+  napi_propertyname pnApproximateSize = napi_proterty_name(env, "approximateSize");
+  napi_set_function_name(env, fnApproximateSize, pnApproximateSize);
+  napi_set_property(env, proto, pnApproximateSize, fnApproximateSize);
 
-  node::js::value fnGetProperty = node::js::CreateFunction(env, Database::GetProperty);
-  node::js::SetFunctionName(env, fnGetProperty, "getProperty");
-  node::js::SetProperty(env, proto, node::js::PropertyName(env, "getProperty"), fnGetProperty);
+  napi_value fnGetProperty = napi_create_function(env, Database::GetProperty);
+  napi_propertyname pnGetProperty = napi_proterty_name(env, "getProperty");
+  napi_set_function_name(env, fnGetProperty, pnGetProperty);
+  napi_set_property(env, proto, pnGetProperty, fnGetProperty);
 
-  node::js::value fnIterator = node::js::CreateFunction(env, Database::Iterator);
-  node::js::SetFunctionName(env, fnIterator, "iterator");
-  node::js::SetProperty(env, proto, node::js::PropertyName(env, "iterator"), fnIterator);
+  napi_value fnIterator = napi_create_function(env, Database::Iterator);
+  napi_propertyname pnIterator = napi_proterty_name(env, "iterator");
+  napi_set_function_name(env, fnIterator, pnIterator);
+  napi_set_property(env, proto, pnIterator, fnIterator);
 
-  database_constructor = node::js::CreatePersistent(env, ctor);
+  database_constructor = napi_create_persistent(env, ctor);
 }
 
 void Database::Destructor (void* obj) {
@@ -191,29 +200,29 @@ void Database::Destructor (void* obj) {
 }
 
 NAPI_METHOD(Database::New) {
-  node::js::value args[1];
-  node::js::GetCallbackArgs(env, info, args, 1);
-  node::js::value thisObj = node::js::GetCallbackObject(env, info);
+  napi_value args[1];
+  napi_get_cb_args(env, info, args, 1);
+  napi_value thisObj = napi_get_cb_object(env, info);
 
   Database* obj = new Database(args[0]);
 
-  node::js::Wrap(env, thisObj, obj, Database::Destructor);
+  napi_wrap(env, thisObj, obj, Database::Destructor);
 
-  node::js::SetReturnValue(env, info, thisObj);
+  napi_set_return_value(env, info, thisObj);
 }
 
-node::js::value Database::NewInstance (node::js::value location) {
+napi_value Database::NewInstance (napi_value location) {
   Nan::EscapableHandleScope scope;
 
   v8::Local<v8::Object> instance;
 
   v8::Local<v8::Function> constructorHandle =
-      node::js::legacy::V8PersistentValue(database_constructor)->As<v8::Function>().Get(v8::Isolate::GetCurrent());
+      V8PersistentValue(database_constructor)->As<v8::Function>().Get(v8::Isolate::GetCurrent());
 
-  v8::Local<v8::Value> argv[] = { node::js::legacy::V8LocalValue(location) };
+  v8::Local<v8::Value> argv[] = { V8LocalValue(location) };
   instance = constructorHandle->NewInstance(1, argv);
 
-  return node::js::legacy::JsValue(scope.Escape(instance));
+  return JsValue(scope.Escape(instance));
 }
 
 NAPI_METHOD(Database::Open) {
@@ -303,8 +312,8 @@ NAPI_METHOD(Database::Close) {
               v8::Local<v8::Function>::Cast(iterator->handle()->Get(
                   Nan::New<v8::String>("end").ToLocalChecked()));
           v8::Local<v8::Value> argv[] = {
-              node::js::legacy::V8LocalValue(
-                  node::js::CreateFunction(env, EmptyMethod)) // empty callback
+              V8LocalValue(
+                  napi_create_function(env, EmptyMethod)) // empty callback
           };
           Nan::MakeCallback(
               iterator->handle()
@@ -324,8 +333,8 @@ NAPI_METHOD(Database::Put) {
 
   LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
 
-  v8::Local<v8::Object> keyHandle = node::js::legacy::V8LocalValue(args[0]).As<v8::Object>();
-  v8::Local<v8::Object> valueHandle = node::js::legacy::V8LocalValue(args[1]).As<v8::Object>();
+  v8::Local<v8::Object> keyHandle = V8LocalValue(args[0]).As<v8::Object>();
+  v8::Local<v8::Object> valueHandle = V8LocalValue(args[1]).As<v8::Object>();
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
   LD_STRING_OR_BUFFER_TO_SLICE(value, valueHandle, value);
 
@@ -352,7 +361,7 @@ NAPI_METHOD(Database::Get) {
 
   LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
 
-  v8::Local<v8::Object> keyHandle = node::js::legacy::V8LocalValue(args[0]).As<v8::Object>();
+  v8::Local<v8::Object> keyHandle = V8LocalValue(args[0]).As<v8::Object>();
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
 
   bool asBuffer = BooleanOptionValue(optionsObj, "asBuffer", true);
@@ -377,7 +386,7 @@ NAPI_METHOD(Database::Delete) {
 
   LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
 
-  v8::Local<v8::Object> keyHandle = node::js::legacy::V8LocalValue(args[0]).As<v8::Object>();
+  v8::Local<v8::Object> keyHandle = V8LocalValue(args[0]).As<v8::Object>();
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
 
   bool sync = BooleanOptionValue(optionsObj, "sync");
@@ -397,17 +406,17 @@ NAPI_METHOD(Database::Delete) {
 
 NAPI_METHOD(Database::Batch) {
   {
-    node::js::value args[1];
-    node::js::GetCallbackArgs(env, info, args, 1);
-    int argsLength = node::js::GetCallbackArgsLength(env, info);
-    v8::Local<v8::Value> arg0 = node::js::legacy::V8LocalValue(args[0]);
+    napi_value args[1];
+    napi_get_cb_args(env, info, args, 1);
+    int argsLength = napi_get_cb_args_length(env, info);
+    v8::Local<v8::Value> arg0 = V8LocalValue(args[0]);
     if ((argsLength == 0 || argsLength == 1) && !arg0->IsArray()) {
       v8::Local<v8::Object> optionsObj;
       if (argsLength > 0 && arg0->IsObject()) {
         optionsObj = arg0.As<v8::Object>();
       }
-      v8::Local<v8::Object> info_This__ = node::js::legacy::V8LocalValue(node::js::GetCallbackObject(env, info)).As<v8::Object>();
-      node::js::SetReturnValue(env, info, node::js::legacy::JsValue(Batch::NewInstance(info_This__, optionsObj)));
+      v8::Local<v8::Object> info_This__ = V8LocalValue(napi_get_cb_object(env, info)).As<v8::Object>();
+      napi_set_return_value(env, info, JsValue(Batch::NewInstance(info_This__, optionsObj)));
       return;
     }
   }
@@ -418,7 +427,7 @@ NAPI_METHOD(Database::Batch) {
 
   bool sync = BooleanOptionValue(optionsObj, "sync");
 
-  v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(node::js::legacy::V8LocalValue(args[0]));
+  v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(V8LocalValue(args[0]));
 
   leveldb::WriteBatch* batch = new leveldb::WriteBatch();
   bool hasData = false;
@@ -475,8 +484,8 @@ NAPI_METHOD(Database::ApproximateSize) {
 
   LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
 
-  v8::Local<v8::Object> startHandle = node::js::legacy::V8LocalValue(args[0]).As<v8::Object>();
-  v8::Local<v8::Object> endHandle = node::js::legacy::V8LocalValue(args[1]).As<v8::Object>();
+  v8::Local<v8::Object> startHandle = V8LocalValue(args[0]).As<v8::Object>();
+  v8::Local<v8::Object> endHandle = V8LocalValue(args[1]).As<v8::Object>();
 
   LD_STRING_OR_BUFFER_TO_SLICE(start, startHandle, start)
   LD_STRING_OR_BUFFER_TO_SLICE(end, endHandle, end)
@@ -496,18 +505,19 @@ NAPI_METHOD(Database::ApproximateSize) {
 }
 
 NAPI_METHOD(Database::GetProperty) {
-  node::js::value args[1];
-  node::js::GetCallbackArgs(env, info, args, 1);
-  v8::Local<v8::Value> arg0 = node::js::legacy::V8LocalValue(args[0]);
-  v8::Local<v8::Object> info_This__ = node::js::legacy::V8LocalValue(node::js::GetCallbackObject(env, info)).As<v8::Object>();
+  napi_value args[1];
+  napi_get_cb_args(env, info, args, 1);
+  napi_value thisObj = napi_get_cb_object(env, info);
+  v8::Local<v8::Value> arg0 = V8LocalValue(args[0]);
 
   v8::Local<v8::Value> propertyHandle = arg0.As<v8::Object>();
   v8::Local<v8::Function> callback; // for LD_STRING_OR_BUFFER_TO_SLICE
 
   LD_STRING_OR_BUFFER_TO_SLICE(property, propertyHandle, property)
 
+  
   leveldown::Database* database =
-      Nan::ObjectWrap::Unwrap<leveldown::Database>(info_This__);
+      static_cast<leveldown::Database*>(napi_unwrap(env, thisObj));
 
   std::string* value = new std::string();
   database->GetPropertyFromDatabase(property, value);
@@ -516,17 +526,18 @@ NAPI_METHOD(Database::GetProperty) {
   delete value;
   delete[] property.data();
 
-  node::js::SetReturnValue(env, info, node::js::legacy::JsValue(returnValue));
+  napi_set_return_value(env, info, JsValue(returnValue));
 }
 
 NAPI_METHOD(Database::Iterator) {
-  node::js::value args[1];
-  node::js::GetCallbackArgs(env, info, args, 1);
-  int argsLength = node::js::GetCallbackArgsLength(env, info);
-  v8::Local<v8::Value> arg0 = node::js::legacy::V8LocalValue(args[0]);
-  v8::Local<v8::Object> info_This__ = node::js::legacy::V8LocalValue(node::js::GetCallbackObject(env, info)).As<v8::Object>();
+  napi_value args[1];
+  napi_get_cb_args(env, info, args, 1);
+  int argsLength = napi_get_cb_args_length(env, info);
+  napi_value thisObj = napi_get_cb_object(env, info);
+  v8::Local<v8::Value> arg0 = V8LocalValue(args[0]);
+  v8::Local<v8::Object> info_This__ = V8LocalValue(thisObj).As<v8::Object>();
 
-  Database* database = Nan::ObjectWrap::Unwrap<Database>(info_This__);
+  Database* database = static_cast<leveldown::Database*>(napi_unwrap(env, thisObj));
 
   v8::Local<v8::Object> optionsObj;
   if (argsLength > 0 && arg0->IsObject()) {
@@ -562,7 +573,7 @@ NAPI_METHOD(Database::Iterator) {
       (id, persistent));
   */
 
-  node::js::SetReturnValue(env, info, node::js::legacy::JsValue(iteratorHandle));
+  napi_set_return_value(env, info, JsValue(iteratorHandle));
 }
 
 

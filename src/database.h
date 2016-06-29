@@ -21,7 +21,7 @@
 
 namespace leveldown {
 
-void LevelDOWN (node::js::env env, node::js::FunctionCallbackInfo info);
+void LevelDOWN (napi_env env, napi_func_cb_info info);
 
 struct Reference {
   Nan::Persistent<v8::Object> handle;
@@ -44,10 +44,10 @@ static inline void ClearReferences (std::vector<Reference *> *references) {
   delete references;
 }
 
-class Database : public Nan::ObjectWrap {
+class Database {
 public:
-  static void Init (node::js::env env);
-  static node::js::value NewInstance (node::js::value location);
+  static void Init (napi_env env);
+  static napi_value NewInstance (napi_value location);
 
   leveldb::Status OpenDatabase (leveldb::Options* options);
   leveldb::Status PutToDatabase (
@@ -76,7 +76,7 @@ public:
   void CloseDatabase ();
   void ReleaseIterator (uint32_t id);
 
-  Database (node::js::value from);
+  Database (napi_value from);
   ~Database ();
 
 private:

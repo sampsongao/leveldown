@@ -338,7 +338,7 @@ v8::Local<v8::Object> Iterator::NewInstance (
 }
 
 NAN_METHOD(Iterator::New) {
-  Database* database = Nan::ObjectWrap::Unwrap<Database>(info[0]->ToObject());
+  Database* database = static_cast<Database*>(napi_unwrap(nullptr, JsValue(info[0]->ToObject())));
 
   leveldb::Slice* start = NULL;
   std::string* end = NULL;

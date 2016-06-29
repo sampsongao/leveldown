@@ -39,7 +39,7 @@ void Batch::Init () {
 }
 
 NAN_METHOD(Batch::New) {
-  Database* database = Nan::ObjectWrap::Unwrap<Database>(info[0]->ToObject());
+  Database* database = static_cast<Database*>(napi_unwrap(nullptr, JsValue(info[0]->ToObject())));
   v8::Local<v8::Object> optionsObj;
 
   if (info.Length() > 1 && info[1]->IsObject()) {
