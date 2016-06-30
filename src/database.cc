@@ -202,11 +202,11 @@ void Database::Destructor (void* obj) {
 NAPI_METHOD(Database::New) {
   napi_value args[1];
   napi_get_cb_args(env, info, args, 1);
-  napi_value thisObj = napi_get_cb_object(env, info);
+  napi_value thisObj = napi_get_cb_this(env, info);
 
   Database* obj = new Database(args[0]);
 
-  napi_wrap(env, thisObj, obj, Database::Destructor);
+  napi_wrap(env, thisObj, obj, Database::Destructor, nullptr);
 
   napi_set_return_value(env, info, thisObj);
 }
@@ -307,16 +307,18 @@ NAPI_METHOD(Database::Close) {
 
         leveldown::Iterator *iterator = it->second;
 
+        v8::Local<v8::Object> iteratorHandle = V8PersistentValue(iterator->handle)->As<v8::Object>().Get(v8::Isolate::GetCurrent());
+
         if (!iterator->ended) {
           v8::Local<v8::Function> end =
-              v8::Local<v8::Function>::Cast(iterator->handle()->Get(
+              v8::Local<v8::Function>::Cast(iteratorHandle->Get(
                   Nan::New<v8::String>("end").ToLocalChecked()));
           v8::Local<v8::Value> argv[] = {
               V8LocalValue(
                   napi_create_function(env, EmptyMethod)) // empty callback
           };
           Nan::MakeCallback(
-              iterator->handle()
+              iteratorHandle
             , end
             , 1
             , argv
@@ -415,7 +417,7 @@ NAPI_METHOD(Database::Batch) {
       if (argsLength > 0 && arg0->IsObject()) {
         optionsObj = arg0.As<v8::Object>();
       }
-      v8::Local<v8::Object> info_This__ = V8LocalValue(napi_get_cb_object(env, info)).As<v8::Object>();
+      v8::Local<v8::Object> info_This__ = V8LocalValue(napi_get_cb_this(env, info)).As<v8::Object>();
       napi_set_return_value(env, info, JsValue(Batch::NewInstance(info_This__, optionsObj)));
       return;
     }
@@ -507,7 +509,7 @@ NAPI_METHOD(Database::ApproximateSize) {
 NAPI_METHOD(Database::GetProperty) {
   napi_value args[1];
   napi_get_cb_args(env, info, args, 1);
-  napi_value thisObj = napi_get_cb_object(env, info);
+  napi_value thisObj = napi_get_cb_this(env, info);
   v8::Local<v8::Value> arg0 = V8LocalValue(args[0]);
 
   v8::Local<v8::Value> propertyHandle = arg0.As<v8::Object>();
@@ -533,7 +535,7 @@ NAPI_METHOD(Database::Iterator) {
   napi_value args[1];
   napi_get_cb_args(env, info, args, 1);
   int argsLength = napi_get_cb_args_length(env, info);
-  napi_value thisObj = napi_get_cb_object(env, info);
+  napi_value thisObj = napi_get_cb_this(env, info);
   v8::Local<v8::Value> arg0 = V8LocalValue(args[0]);
   v8::Local<v8::Object> info_This__ = V8LocalValue(thisObj).As<v8::Object>();
 
@@ -548,10 +550,10 @@ NAPI_METHOD(Database::Iterator) {
   // easily store & lookup on our `iterators` map
   uint32_t id = database->currentIteratorId++;
   v8::TryCatch try_catch;
-  v8::Local<v8::Object> iteratorHandle = Iterator::NewInstance(
-      info_This__
-    , Nan::New<v8::Number>(id)
-    , optionsObj
+  napi_value iteratorHandle = Iterator::NewInstance(
+      thisObj
+    , napi_create_number(env, id)
+    , JsValue(optionsObj)
   );
   if (try_catch.HasCaught()) {
     // NB: node::FatalException can segfault here if there is no room on stack.
@@ -559,7 +561,7 @@ NAPI_METHOD(Database::Iterator) {
   }
 
   leveldown::Iterator *iterator =
-      Nan::ObjectWrap::Unwrap<leveldown::Iterator>(iteratorHandle);
+      static_cast<leveldown::Iterator*>(napi_unwrap(env, iteratorHandle));
 
   database->iterators[id] = iterator;
 
@@ -573,7 +575,7 @@ NAPI_METHOD(Database::Iterator) {
       (id, persistent));
   */
 
-  napi_set_return_value(env, info, JsValue(iteratorHandle));
+  napi_set_return_value(env, info, iteratorHandle);
 }
 
 

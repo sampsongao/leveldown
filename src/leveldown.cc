@@ -54,8 +54,8 @@ void RepairDB (napi_env env, napi_func_cb_info info) {
 
 void Init(napi_env env, napi_value target, napi_value module) {
   Database::Init(env);
-  leveldown::Iterator::Init();
-  leveldown::Batch::Init();
+  leveldown::Iterator::Init(env);
+  leveldown::Batch::Init(env);
 
   napi_propertyname nameDestroy = napi_property_name(env, "destroy");
   napi_propertyname nameRepair = napi_property_name(env, "repair");

@@ -19,13 +19,13 @@ namespace leveldown {
 class Database;
 class AsyncWorker;
 
-class Iterator : public Nan::ObjectWrap {
+class Iterator {
 public:
-  static void Init ();
-  static v8::Local<v8::Object> NewInstance (
-      v8::Local<v8::Object> database
-    , v8::Local<v8::Number> id
-    , v8::Local<v8::Object> optionsObj
+  static void Init (napi_env env);
+  static napi_value NewInstance (
+      napi_value database
+    , napi_value id
+    , napi_value optionsObj
   );
 
   Iterator (
@@ -74,6 +74,7 @@ private:
   size_t highWaterMark;
 
 public:
+  napi_persistent handle;
   bool keyAsBuffer;
   bool valueAsBuffer;
   bool nexting;
@@ -84,10 +85,12 @@ private:
   bool Read (std::string& key, std::string& value);
   bool GetIterator ();
 
-  static NAN_METHOD(New);
-  static NAN_METHOD(Seek);
-  static NAN_METHOD(Next);
-  static NAN_METHOD(End);
+  static void Destructor(void* obj);
+
+  static NAPI_METHOD(New);
+  static NAPI_METHOD(Seek);
+  static NAPI_METHOD(Next);
+  static NAPI_METHOD(End);
 };
 
 } // namespace leveldown

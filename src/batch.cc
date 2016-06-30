@@ -27,7 +27,7 @@ leveldb::Status Batch::Write () {
   return database->WriteBatchToDatabase(options, batch);
 }
 
-void Batch::Init () {
+void Batch::Init (napi_env env) {
   v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(Batch::New);
   batch_constructor.Reset(tpl);
   tpl->SetClassName(Nan::New("Batch").ToLocalChecked());

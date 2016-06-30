@@ -141,7 +141,7 @@ static inline void DisposeStringOrBufferFromSlice(
   }                                                                            \
   napi_value args[MAX(optionPos+1, callbackPos+1)];                            \
   napi_get_cb_args(env, info, args, MAX(optionPos+1, callbackPos+1));          \
-  napi_value thisObj = napi_get_cb_object(env, info);                          \
+  napi_value thisObj = napi_get_cb_this(env, info);                            \
   leveldown::Database* database =                                              \
     static_cast<leveldown::Database*>(napi_unwrap(env, thisObj));              \
   napi_value optionsObjNapi = nullptr;                                         \

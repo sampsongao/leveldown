@@ -12,7 +12,7 @@ namespace leveldown {
 
 class Batch : public Nan::ObjectWrap {
 public:
-  static void Init();
+  static void Init(napi_env env);
   static v8::Local<v8::Value> NewInstance (
       v8::Local<v8::Object> database
     , v8::Local<v8::Object> optionsObj

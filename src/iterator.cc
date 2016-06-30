@@ -13,7 +13,7 @@
 
 namespace leveldown {
 
-static Nan::Persistent<v8::FunctionTemplate> iterator_constructor;
+static napi_persistent iterator_constructor;
 
 Iterator::Iterator (
     Database* database
@@ -213,11 +213,14 @@ void checkEndCallback (Iterator* iterator) {
   }
 }
 
-NAN_METHOD(Iterator::Seek) {
-  Iterator* iterator = Nan::ObjectWrap::Unwrap<Iterator>(info.This());
+NAPI_METHOD(Iterator::Seek) {
+  napi_value args[1];
+  napi_get_cb_args(env, info, args, 1);
+  napi_value thisObj = napi_get_cb_this(env, info);
+  Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, thisObj));
   iterator->GetIterator();
   leveldb::Iterator* dbIterator = iterator->dbIterator;
-  Nan::Utf8String key(info[0]);
+  Nan::Utf8String key(V8LocalValue(args[0]));
 
   dbIterator->Seek(*key);
   iterator->seeking = true;
@@ -247,17 +250,23 @@ NAN_METHOD(Iterator::Seek) {
     }
   }
 
-  info.GetReturnValue().Set(info.Holder());
+  napi_value holder = napi_get_cb_holder(env, info);
+  napi_set_return_value(env, info, holder);
 }
 
-NAN_METHOD(Iterator::Next) {
-  Iterator* iterator = Nan::ObjectWrap::Unwrap<Iterator>(info.This());
+NAPI_METHOD(Iterator::Next) {
+  napi_value args[1];
+  napi_get_cb_args(env, info, args, 1);
+  napi_value thisObj = napi_get_cb_this(env, info);
+  Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, thisObj));
 
-  if (!info[0]->IsFunction()) {
+  v8::Local<v8::Value> arg0 = V8LocalValue(args[0]);
+
+  if (!arg0->IsFunction()) {
     return Nan::ThrowError("next() requires a callback argument");
   }
 
-  v8::Local<v8::Function> callback = info[0].As<v8::Function>();
+  v8::Local<v8::Function> callback = arg0.As<v8::Function>();
 
   NextWorker* worker = new NextWorker(
       iterator
@@ -265,30 +274,36 @@ NAN_METHOD(Iterator::Next) {
     , checkEndCallback
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = info.This();
+  v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
   worker->SaveToPersistent("iterator", _this);
   iterator->nexting = true;
   Nan::AsyncQueueWorker(worker);
 
-  info.GetReturnValue().Set(info.Holder());
+  napi_value holder = napi_get_cb_holder(env, info);
+  napi_set_return_value(env, info, holder);
 }
 
-NAN_METHOD(Iterator::End) {
-  Iterator* iterator = Nan::ObjectWrap::Unwrap<Iterator>(info.This());
+NAPI_METHOD(Iterator::End) {
+  napi_value args[1];
+  napi_get_cb_args(env, info, args, 1);
+  napi_value thisObj = napi_get_cb_this(env, info);
+  Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, thisObj));
 
-  if (!info[0]->IsFunction()) {
+  v8::Local<v8::Value> arg0 = V8LocalValue(args[0]);
+
+  if (!arg0->IsFunction()) {
     return Nan::ThrowError("end() requires a callback argument");
   }
 
   if (!iterator->ended) {
-    v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(info[0]);
+    v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(arg0);
 
     EndWorker* worker = new EndWorker(
         iterator
       , new Nan::Callback(callback)
     );
     // persist to prevent accidental GC
-    v8::Local<v8::Object> _this = info.This();
+    v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
     worker->SaveToPersistent("iterator", _this);
     iterator->ended = true;
 
@@ -300,45 +315,70 @@ NAN_METHOD(Iterator::End) {
     }
   }
 
-  info.GetReturnValue().Set(info.Holder());
+  napi_value holder = napi_get_cb_holder(env, info);
+  napi_set_return_value(env, info, holder);
 }
 
-void Iterator::Init () {
-  v8::Local<v8::FunctionTemplate> tpl =
-      Nan::New<v8::FunctionTemplate>(Iterator::New);
-  iterator_constructor.Reset(tpl);
-  tpl->SetClassName(Nan::New("Iterator").ToLocalChecked());
-  tpl->InstanceTemplate()->SetInternalFieldCount(1);
-  Nan::SetPrototypeMethod(tpl, "seek", Iterator::Seek);
-  Nan::SetPrototypeMethod(tpl, "next", Iterator::Next);
-  Nan::SetPrototypeMethod(tpl, "end", Iterator::End);
+void Iterator::Init (napi_env env) {
+  napi_value ctor = napi_create_constructor_for_wrap(env, Iterator::New);
+  napi_set_function_name(env, ctor, napi_property_name(env, "Iterator"));
+
+  // Was this never used?
+  //tpl->InstanceTemplate()->SetInternalFieldCount(1);
+
+  napi_value proto = napi_get_property(env, ctor, napi_property_name(env, "prototype"));
+
+  napi_value fnSeek = napi_create_function(env, Iterator::Seek);
+  napi_propertyname pnSeek = napi_property_name(env, "seek");
+  napi_set_function_name(env, fnSeek, pnSeek);
+  napi_set_property(env, proto, pnSeek, fnSeek);
+
+  napi_value fnNext = napi_create_function(env, Iterator::Next);
+  napi_propertyname pnNext = napi_property_name(env, "next");
+  napi_set_function_name(env, fnNext, pnNext);
+  napi_set_property(env, proto, pnNext, fnNext);
+
+  napi_value fnEnd = napi_create_function(env, Iterator::End);
+  napi_propertyname pnEnd = napi_property_name(env, "end");
+  napi_set_function_name(env, fnEnd, pnEnd);
+  napi_set_property(env, proto, pnEnd, fnEnd);
+
+  iterator_constructor = napi_create_persistent(env, ctor);
 }
 
-v8::Local<v8::Object> Iterator::NewInstance (
-        v8::Local<v8::Object> database
-      , v8::Local<v8::Number> id
-      , v8::Local<v8::Object> optionsObj
+napi_value Iterator::NewInstance (
+        napi_value databaseNapi
+      , napi_value idNapi
+      , napi_value optionsObjNapi
     ) {
 
   Nan::EscapableHandleScope scope;
 
+  v8::Local<v8::Object> database = V8LocalValue(databaseNapi).As<v8::Object>();
+  v8::Local<v8::Number> id = V8LocalValue(idNapi).As<v8::Number>();
+  v8::Local<v8::Object> optionsObj = V8LocalValue(optionsObjNapi).As<v8::Object>();
+
   v8::Local<v8::Object> instance;
-  v8::Local<v8::FunctionTemplate> constructorHandle =
-      Nan::New<v8::FunctionTemplate>(iterator_constructor);
+  v8::Local<v8::Function> constructorHandle =
+      V8PersistentValue(iterator_constructor)->As<v8::Function>().Get(v8::Isolate::GetCurrent());
 
   if (optionsObj.IsEmpty()) {
     v8::Local<v8::Value> argv[2] = { database, id };
-    instance = constructorHandle->GetFunction()->NewInstance(2, argv);
+    instance = constructorHandle->NewInstance(2, argv);
   } else {
     v8::Local<v8::Value> argv[3] = { database, id, optionsObj };
-    instance = constructorHandle->GetFunction()->NewInstance(3, argv);
+    instance = constructorHandle->NewInstance(3, argv);
   }
 
-  return scope.Escape(instance);
+  return JsValue(scope.Escape(instance));
 }
 
-NAN_METHOD(Iterator::New) {
-  Database* database = static_cast<Database*>(napi_unwrap(nullptr, JsValue(info[0]->ToObject())));
+NAPI_METHOD(Iterator::New) {
+  napi_value args[3];
+  napi_get_cb_args(env, info, args, 3);
+  int argsLength = napi_get_cb_args_length(env, info);
+
+  Database* database = static_cast<Database*>(napi_unwrap(env, args[0]));
 
   leveldb::Slice* start = NULL;
   std::string* end = NULL;
@@ -346,7 +386,7 @@ NAN_METHOD(Iterator::New) {
   // default highWaterMark from Readble-streams
   size_t highWaterMark = 16 * 1024;
 
-  v8::Local<v8::Value> id = info[1];
+  v8::Local<v8::Value> id = V8LocalValue(args[1]);
 
   v8::Local<v8::Object> optionsObj;
 
@@ -364,8 +404,9 @@ NAN_METHOD(Iterator::New) {
   //default to forward.
   bool reverse = false;
 
-  if (info.Length() > 1 && info[2]->IsObject()) {
-    optionsObj = v8::Local<v8::Object>::Cast(info[2]);
+  v8::Local<v8::Value> arg2 = V8LocalValue(args[2]);
+  if (argsLength > 1 && arg2->IsObject()) {
+    optionsObj = v8::Local<v8::Object>::Cast(arg2);
 
     reverse = BooleanOptionValue(optionsObj, "reverse");
 
@@ -525,9 +566,15 @@ NAN_METHOD(Iterator::New) {
     , valueAsBuffer
     , highWaterMark
   );
-  iterator->Wrap(info.This());
+  napi_value thisObj = napi_get_cb_this(env, info);
+  napi_wrap(env, thisObj, iterator, Iterator::Destructor, &iterator->handle);
 
-  info.GetReturnValue().Set(info.This());
+  napi_set_return_value(env, info, thisObj);
+}
+
+void Iterator::Destructor(void* obj) {
+  Iterator* iterator = static_cast<Iterator*>(obj);
+  delete iterator;
 }
 
 } // namespace leveldown
