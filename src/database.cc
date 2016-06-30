@@ -498,9 +498,8 @@ NAPI_METHOD(Database::GetProperty) {
   napi_value args[1];
   napi_get_cb_args(env, info, args, 1);
   napi_value thisObj = napi_get_cb_this(env, info);
-  v8::Local<v8::Value> arg0 = V8LocalValue(args[0]);
 
-  v8::Local<v8::Value> propertyHandle = arg0.As<v8::Object>();
+  v8::Local<v8::Value> propertyHandle = V8LocalValue(args[0]).As<v8::Object>();
 
   LD_STRING_OR_BUFFER_TO_SLICE(property, propertyHandle, property)
 
@@ -510,12 +509,11 @@ NAPI_METHOD(Database::GetProperty) {
 
   std::string* value = new std::string();
   database->GetPropertyFromDatabase(property, value);
-  v8::Local<v8::String> returnValue
-      = Nan::New<v8::String>(value->c_str(), value->length()).ToLocalChecked();
+  napi_value returnValue = napi_create_string_with_length(env, value->c_str(), value->length());
   delete value;
   delete[] property.data();
 
-  napi_set_return_value(env, info, JsValue(returnValue));
+  napi_set_return_value(env, info, returnValue);
 }
 
 NAPI_METHOD(Database::Iterator) {

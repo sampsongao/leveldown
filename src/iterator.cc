@@ -381,7 +381,7 @@ NAPI_METHOD(Iterator::New) {
   // default highWaterMark from Readble-streams
   size_t highWaterMark = 16 * 1024;
 
-  v8::Local<v8::Value> id = V8LocalValue(args[1]);
+  napi_value id = args[1];
 
   napi_value optionsObj = nullptr;
 
@@ -558,7 +558,7 @@ NAPI_METHOD(Iterator::New) {
 
   Iterator* iterator = new Iterator(
       database
-    , (uint32_t)id->Int32Value()
+    , (uint32_t)napi_get_value_int32(env, id)
     , start
     , end
     , reverse
