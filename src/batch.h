@@ -10,12 +10,12 @@
 
 namespace leveldown {
 
-class Batch : public Nan::ObjectWrap {
+class Batch {
 public:
   static void Init(napi_env env);
-  static v8::Local<v8::Value> NewInstance (
-      v8::Local<v8::Object> database
-    , v8::Local<v8::Object> optionsObj
+  static napi_value NewInstance (
+      napi_value database
+    , napi_value optionsObj
   );
 
   Batch  (leveldown::Database* database, bool sync);
@@ -28,11 +28,13 @@ private:
   leveldb::WriteBatch* batch;
   bool hasData; // keep track of whether we're writing data or not
 
-  static NAN_METHOD(New);
-  static NAN_METHOD(Put);
-  static NAN_METHOD(Del);
-  static NAN_METHOD(Clear);
-  static NAN_METHOD(Write);
+  static void Destructor(void* obj);
+
+  static NAPI_METHOD(New);
+  static NAPI_METHOD(Put);
+  static NAPI_METHOD(Del);
+  static NAPI_METHOD(Clear);
+  static NAPI_METHOD(Write);
 };
 
 } // namespace leveldown

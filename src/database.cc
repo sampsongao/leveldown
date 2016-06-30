@@ -417,8 +417,8 @@ NAPI_METHOD(Database::Batch) {
       if (argsLength > 0 && arg0->IsObject()) {
         optionsObj = arg0.As<v8::Object>();
       }
-      v8::Local<v8::Object> info_This__ = V8LocalValue(napi_get_cb_this(env, info)).As<v8::Object>();
-      napi_set_return_value(env, info, JsValue(Batch::NewInstance(info_This__, optionsObj)));
+      napi_value thisObj = napi_get_cb_this(env, info);
+      napi_set_return_value(env, info, Batch::NewInstance(thisObj, JsValue(optionsObj)));
       return;
     }
   }
