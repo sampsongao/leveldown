@@ -230,22 +230,22 @@ NAPI_METHOD(Database::Open) {
 
   LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
 
-  bool createIfMissing = BooleanOptionValue(env, optionsObjNapi, "createIfMissing", true);
-  bool errorIfExists = BooleanOptionValue(env, optionsObjNapi, "errorIfExists");
-  bool compression = BooleanOptionValue(env, optionsObjNapi, "compression", true);
+  bool createIfMissing = BooleanOptionValue(env, optionsObj, "createIfMissing", true);
+  bool errorIfExists = BooleanOptionValue(env, optionsObj, "errorIfExists");
+  bool compression = BooleanOptionValue(env, optionsObj, "compression", true);
 
-  uint32_t cacheSize = UInt32OptionValue(env, optionsObjNapi, "cacheSize", 8 << 20);
+  uint32_t cacheSize = UInt32OptionValue(env, optionsObj, "cacheSize", 8 << 20);
   uint32_t writeBufferSize = UInt32OptionValue(
       env
-    , optionsObjNapi
+    , optionsObj
     , "writeBufferSize"
     , 4 << 20
   );
-  uint32_t blockSize = UInt32OptionValue(env, optionsObjNapi, "blockSize", 4096);
-  uint32_t maxOpenFiles = UInt32OptionValue(env, optionsObjNapi, "maxOpenFiles", 1000);
+  uint32_t blockSize = UInt32OptionValue(env, optionsObj, "blockSize", 4096);
+  uint32_t maxOpenFiles = UInt32OptionValue(env, optionsObj, "maxOpenFiles", 1000);
   uint32_t blockRestartInterval = UInt32OptionValue(
       env
-    , optionsObjNapi
+    , optionsObj
     , "blockRestartInterval"
     , 16
   );
@@ -342,7 +342,7 @@ NAPI_METHOD(Database::Put) {
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
   LD_STRING_OR_BUFFER_TO_SLICE(value, valueHandle, value);
 
-  bool sync = BooleanOptionValue(env, optionsObjNapi, "sync");
+  bool sync = BooleanOptionValue(env, optionsObj, "sync");
 
   WriteWorker* worker  = new WriteWorker(
       database
@@ -368,8 +368,8 @@ NAPI_METHOD(Database::Get) {
   v8::Local<v8::Object> keyHandle = V8LocalValue(args[0]).As<v8::Object>();
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
 
-  bool asBuffer = BooleanOptionValue(env, optionsObjNapi, "asBuffer", true);
-  bool fillCache = BooleanOptionValue(env, optionsObjNapi, "fillCache", true);
+  bool asBuffer = BooleanOptionValue(env, optionsObj, "asBuffer", true);
+  bool fillCache = BooleanOptionValue(env, optionsObj, "fillCache", true);
 
   ReadWorker* worker = new ReadWorker(
       database
@@ -393,7 +393,7 @@ NAPI_METHOD(Database::Delete) {
   v8::Local<v8::Object> keyHandle = V8LocalValue(args[0]).As<v8::Object>();
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
 
-  bool sync = BooleanOptionValue(env, optionsObjNapi, "sync");
+  bool sync = BooleanOptionValue(env, optionsObj, "sync");
 
   DeleteWorker* worker = new DeleteWorker(
       database
@@ -413,14 +413,13 @@ NAPI_METHOD(Database::Batch) {
     napi_value args[1];
     napi_get_cb_args(env, info, args, 1);
     int argsLength = napi_get_cb_args_length(env, info);
-    v8::Local<v8::Value> arg0 = V8LocalValue(args[0]);
-    if ((argsLength == 0 || argsLength == 1) && !arg0->IsArray()) {
-      v8::Local<v8::Object> optionsObj;
-      if (argsLength > 0 && arg0->IsObject()) {
-        optionsObj = arg0.As<v8::Object>();
+    if ((argsLength == 0 || argsLength == 1) && !V8LocalValue(args[0])->IsArray()) {
+      napi_value optionsObj = nullptr;
+      if (argsLength > 0 && napi_get_type_of_value(env, optionsObj) == napi_object) {
+        optionsObj = args[0];
       }
       napi_value thisObj = napi_get_cb_this(env, info);
-      napi_set_return_value(env, info, Batch::NewInstance(thisObj, JsValue(optionsObj)));
+      napi_set_return_value(env, info, Batch::NewInstance(thisObj, optionsObj));
       return;
     }
   }
@@ -429,7 +428,7 @@ NAPI_METHOD(Database::Batch) {
 
   LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
 
-  bool sync = BooleanOptionValue(env, optionsObjNapi, "sync");
+  bool sync = BooleanOptionValue(env, optionsObj, "sync");
 
   v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(V8LocalValue(args[0]));
 
@@ -538,14 +537,13 @@ NAPI_METHOD(Database::Iterator) {
   napi_get_cb_args(env, info, args, 1);
   int argsLength = napi_get_cb_args_length(env, info);
   napi_value thisObj = napi_get_cb_this(env, info);
-  v8::Local<v8::Value> arg0 = V8LocalValue(args[0]);
   v8::Local<v8::Object> info_This__ = V8LocalValue(thisObj).As<v8::Object>();
 
   Database* database = static_cast<leveldown::Database*>(napi_unwrap(env, thisObj));
 
-  v8::Local<v8::Object> optionsObj;
-  if (argsLength > 0 && arg0->IsObject()) {
-    optionsObj = v8::Local<v8::Object>::Cast(arg0);
+  napi_value optionsObj = nullptr;
+  if (argsLength > 0 && napi_get_type_of_value(env, args[0]) == napi_object) {
+    optionsObj = args[0];
   }
 
   // each iterator gets a unique id for this Database, so we can
@@ -555,7 +553,7 @@ NAPI_METHOD(Database::Iterator) {
   napi_value iteratorHandle = Iterator::NewInstance(
       thisObj
     , napi_create_number(env, id)
-    , JsValue(optionsObj)
+    , optionsObj
   );
   if (try_catch.HasCaught()) {
     // NB: node::FatalException can segfault here if there is no room on stack.

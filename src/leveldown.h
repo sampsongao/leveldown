@@ -144,18 +144,18 @@ static inline void DisposeStringOrBufferFromSlice(
   napi_value thisObj = napi_get_cb_this(env, info);                            \
   leveldown::Database* database =                                              \
     static_cast<leveldown::Database*>(napi_unwrap(env, thisObj));              \
-  napi_value optionsObjNapi = nullptr;                                         \
+  napi_value optionsObj = nullptr;                                             \
   napi_value callbackNapi = nullptr;                                           \
   if (optionPos == -1 &&                                                       \
-      V8LocalValue(args[callbackPos])->IsFunction()) {       \
+      V8LocalValue(args[callbackPos])->IsFunction()) {                         \
     callbackNapi = args[callbackPos];                                          \
   } else if (optionPos != -1 &&                                                \
-      V8LocalValue(args[callbackPos - 1])->IsFunction()) {   \
+      V8LocalValue(args[callbackPos - 1])->IsFunction()) {                     \
     callbackNapi = args[callbackPos - 1];                                      \
   } else if (optionPos != -1                                                   \
-        && V8LocalValue(args[optionPos])->IsObject()         \
-        && V8LocalValue(args[callbackPos])->IsFunction()) {  \
-    optionsObjNapi = args[optionPos];                                          \
+        && V8LocalValue(args[optionPos])->IsObject()                           \
+        && V8LocalValue(args[callbackPos])->IsFunction()) {                    \
+    optionsObj = args[optionPos];                                              \
     callbackNapi = args[callbackPos];                                          \
   } else {                                                                     \
     return napi_throw_error(env,                                               \
@@ -163,15 +163,11 @@ static inline void DisposeStringOrBufferFromSlice(
         napi_create_string(env, #name "() requires a callback argument")));    \
   }
 
-// TODO (ianhall): This is temporary, remove when no longer used (and rename objectObjNapi, callbackNapi above back to objectObj, callback)
+// TODO (ianhall): This is temporary, remove when no longer used (and rename callbackNapi above back to callback)
 #define LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8                                 \
   v8::Local<v8::Object> info_This__ =                                          \
-    V8LocalValue(thisObj).As<v8::Object>();                  \
-  v8::Local<v8::Object> optionsObj;                                            \
+    V8LocalValue(thisObj).As<v8::Object>();                                    \
   v8::Local<v8::Function> callback;                                            \
-  if (optionsObjNapi != nullptr) {                                             \
-    optionsObj = V8LocalValue(optionsObjNapi).As<v8::Object>();\
-  }                                                                            \
   if (callbackNapi != nullptr) {                                               \
     callback = V8LocalValue(callbackNapi).As<v8::Function>();\
   }

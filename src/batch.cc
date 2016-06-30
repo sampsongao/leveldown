@@ -87,24 +87,23 @@ NAPI_METHOD(Batch::New) {
 
 napi_value Batch::NewInstance (
         napi_value databaseNapi
-      , napi_value optionsObjNapi
+      , napi_value optionsObj
     ) {
 
   Nan::EscapableHandleScope scope;
 
   v8::Local<v8::Object> database = V8LocalValue(databaseNapi).As<v8::Object>();
-  v8::Local<v8::Object> optionsObj = V8LocalValue(optionsObjNapi).As<v8::Object>();
 
   v8::Local<v8::Object> instance;
 
   v8::Local<v8::Function> constructorHandle =
       V8PersistentValue(batch_constructor)->As<v8::Function>().Get(v8::Isolate::GetCurrent());
 
-  if (optionsObj.IsEmpty()) {
+  if (optionsObj == nullptr) {
     v8::Local<v8::Value> argv[1] = { database };
     instance = constructorHandle->NewInstance(1, argv);
   } else {
-    v8::Local<v8::Value> argv[2] = { database, optionsObj };
+    v8::Local<v8::Value> argv[2] = { database, V8LocalValue(optionsObj) };
     instance = constructorHandle->NewInstance(2, argv);
   }
 

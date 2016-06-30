@@ -349,24 +349,23 @@ void Iterator::Init (napi_env env) {
 napi_value Iterator::NewInstance (
         napi_value databaseNapi
       , napi_value idNapi
-      , napi_value optionsObjNapi
+      , napi_value optionsObj
     ) {
 
   Nan::EscapableHandleScope scope;
 
   v8::Local<v8::Object> database = V8LocalValue(databaseNapi).As<v8::Object>();
   v8::Local<v8::Number> id = V8LocalValue(idNapi).As<v8::Number>();
-  v8::Local<v8::Object> optionsObj = V8LocalValue(optionsObjNapi).As<v8::Object>();
 
   v8::Local<v8::Object> instance;
   v8::Local<v8::Function> constructorHandle =
       V8PersistentValue(iterator_constructor)->As<v8::Function>().Get(v8::Isolate::GetCurrent());
 
-  if (optionsObj.IsEmpty()) {
+  if (optionsObj == nullptr) {
     v8::Local<v8::Value> argv[2] = { database, id };
     instance = constructorHandle->NewInstance(2, argv);
   } else {
-    v8::Local<v8::Value> argv[3] = { database, id, optionsObj };
+    v8::Local<v8::Value> argv[3] = { database, id, V8LocalValue(optionsObj) };
     instance = constructorHandle->NewInstance(3, argv);
   }
 
@@ -388,7 +387,7 @@ NAPI_METHOD(Iterator::New) {
 
   v8::Local<v8::Value> id = V8LocalValue(args[1]);
 
-  v8::Local<v8::Object> optionsObj;
+  napi_value optionsObj = nullptr;
 
   v8::Local<v8::Object> ltHandle;
   v8::Local<v8::Object> lteHandle;
@@ -404,17 +403,18 @@ NAPI_METHOD(Iterator::New) {
   //default to forward.
   bool reverse = false;
 
-  v8::Local<v8::Value> arg2 = V8LocalValue(args[2]);
-  if (argsLength > 1 && arg2->IsObject()) {
-    optionsObj = v8::Local<v8::Object>::Cast(arg2);
+  if (argsLength > 1 && napi_get_type_of_value(env, args[2]) == napi_object) {
+    optionsObj = args[2];
 
-    reverse = BooleanOptionValue(env, JsValue(optionsObj), "reverse");
+    reverse = BooleanOptionValue(env, optionsObj, "reverse");
 
-    if (optionsObj->Has(Nan::New("start").ToLocalChecked())
-        && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("start").ToLocalChecked()))
-          || optionsObj->Get(Nan::New("start").ToLocalChecked())->IsString())) {
+    napi_propertyname pnStart = napi_property_name(env, "start");
+    napi_value valStart = nullptr;
+    if (napi_has_property(env, optionsObj, pnStart)
+        && (node::Buffer::HasInstance(V8LocalValue(valStart = napi_get_property(env, optionsObj, pnStart)))
+          || napi_get_type_of_value(env, valStart) == napi_string)) {
 
-      v8::Local<v8::Value> startBuffer = optionsObj->Get(Nan::New("start").ToLocalChecked());
+      v8::Local<v8::Value> startBuffer = V8LocalValue(valStart);
 
       // ignore start if it has size 0 since a Slice can't have length 0
       if (StringOrBufferLength(startBuffer) > 0) {
@@ -424,11 +424,13 @@ NAPI_METHOD(Iterator::New) {
       }
     }
 
-    if (optionsObj->Has(Nan::New("end").ToLocalChecked())
-        && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("end").ToLocalChecked()))
-          || optionsObj->Get(Nan::New("end").ToLocalChecked())->IsString())) {
+    napi_propertyname pnEnd = napi_property_name(env, "end");
+    napi_value valEnd = nullptr;
+    if (napi_has_property(env, optionsObj, pnEnd)
+        && (node::Buffer::HasInstance(V8LocalValue(valEnd = napi_get_property(env, optionsObj, pnEnd)))
+          || napi_get_type_of_value(env, valEnd) == napi_string)) {
 
-      v8::Local<v8::Value> endBuffer = optionsObj->Get(Nan::New("end").ToLocalChecked());
+      v8::Local<v8::Value> endBuffer = V8LocalValue(valEnd);
 
       // ignore end if it has size 0 since a Slice can't have length 0
       if (StringOrBufferLength(endBuffer) > 0) {
@@ -438,21 +440,25 @@ NAPI_METHOD(Iterator::New) {
       }
     }
 
-    if (!optionsObj.IsEmpty() && optionsObj->Has(Nan::New("limit").ToLocalChecked())) {
-      limit = v8::Local<v8::Integer>::Cast(optionsObj->Get(
-          Nan::New("limit").ToLocalChecked()))->Value();
+    napi_propertyname pnLimit = napi_property_name(env, "limit");
+    if (optionsObj != nullptr && napi_has_property(env, optionsObj, pnLimit)) {
+      limit = v8::Local<v8::Integer>::Cast(
+          V8LocalValue(napi_get_property(env, optionsObj, pnLimit)))->Value();
     }
 
-    if (optionsObj->Has(Nan::New("highWaterMark").ToLocalChecked())) {
-      highWaterMark = v8::Local<v8::Integer>::Cast(optionsObj->Get(
-            Nan::New("highWaterMark").ToLocalChecked()))->Value();
+    napi_propertyname pnHighWaterMark = napi_property_name(env, "highWaterMark");
+    if (napi_has_property(env, optionsObj, pnHighWaterMark)) {
+      highWaterMark = v8::Local<v8::Integer>::Cast(
+            V8LocalValue(napi_get_property(env, optionsObj, pnHighWaterMark)))->Value();
     }
 
-    if (optionsObj->Has(Nan::New("lt").ToLocalChecked())
-        && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("lt").ToLocalChecked()))
-          || optionsObj->Get(Nan::New("lt").ToLocalChecked())->IsString())) {
+    napi_propertyname pnLt = napi_property_name(env, "lt");
+    napi_value valLt = nullptr;
+    if (napi_has_property(env, optionsObj, pnLt)
+        && (node::Buffer::HasInstance(V8LocalValue(valLt = napi_get_property(env, optionsObj, pnLt)))
+          || napi_get_type_of_value(env, valLt) == napi_string)) {
 
-      v8::Local<v8::Value> ltBuffer = optionsObj->Get(Nan::New("lt").ToLocalChecked());
+      v8::Local<v8::Value> ltBuffer = V8LocalValue(valLt);
 
       // ignore end if it has size 0 since a Slice can't have length 0
       if (StringOrBufferLength(ltBuffer) > 0) {
@@ -471,11 +477,13 @@ NAPI_METHOD(Iterator::New) {
       }
     }
 
-    if (optionsObj->Has(Nan::New("lte").ToLocalChecked())
-        && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("lte").ToLocalChecked()))
-          || optionsObj->Get(Nan::New("lte").ToLocalChecked())->IsString())) {
+    napi_propertyname pnLte = napi_property_name(env, "lte");
+    napi_value valLte = nullptr;
+    if (napi_has_property(env, optionsObj, pnLte)
+        && (node::Buffer::HasInstance(V8LocalValue(valLte = napi_get_property(env, optionsObj, pnLte)))
+          || napi_get_type_of_value(env, valLte) == napi_string)) {
 
-      v8::Local<v8::Value> lteBuffer = optionsObj->Get(Nan::New("lte").ToLocalChecked());
+      v8::Local<v8::Value> lteBuffer = V8LocalValue(valLte);
 
       // ignore end if it has size 0 since a Slice can't have length 0
       if (StringOrBufferLength(lteBuffer) > 0) {
@@ -494,11 +502,13 @@ NAPI_METHOD(Iterator::New) {
       }
     }
 
-    if (optionsObj->Has(Nan::New("gt").ToLocalChecked())
-        && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("gt").ToLocalChecked()))
-          || optionsObj->Get(Nan::New("gt").ToLocalChecked())->IsString())) {
+    napi_propertyname pnGt = napi_property_name(env, "gt");
+    napi_value valGt = nullptr;
+    if (napi_has_property(env, optionsObj, pnGt)
+        && (node::Buffer::HasInstance(V8LocalValue(valGt = napi_get_property(env, optionsObj, pnGt)))
+          || napi_get_type_of_value(env, valGt) == napi_string)) {
 
-      v8::Local<v8::Value> gtBuffer = optionsObj->Get(Nan::New("gt").ToLocalChecked());
+      v8::Local<v8::Value> gtBuffer = V8LocalValue(valGt);
 
       // ignore end if it has size 0 since a Slice can't have length 0
       if (StringOrBufferLength(gtBuffer) > 0) {
@@ -517,11 +527,13 @@ NAPI_METHOD(Iterator::New) {
       }
     }
 
-    if (optionsObj->Has(Nan::New("gte").ToLocalChecked())
-        && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("gte").ToLocalChecked()))
-          || optionsObj->Get(Nan::New("gte").ToLocalChecked())->IsString())) {
+    napi_propertyname pnGte = napi_property_name(env, "gte");
+    napi_value valGte = nullptr;
+    if (napi_has_property(env, optionsObj, pnGte)
+        && (node::Buffer::HasInstance(V8LocalValue(valGte = napi_get_property(env, optionsObj, pnGte)))
+          || napi_get_type_of_value(env, valGte) == napi_string)) {
 
-      v8::Local<v8::Value> gteBuffer = optionsObj->Get(Nan::New("gte").ToLocalChecked());
+      v8::Local<v8::Value> gteBuffer = V8LocalValue(valGte);
 
       // ignore end if it has size 0 since a Slice can't have length 0
       if (StringOrBufferLength(gteBuffer) > 0) {
@@ -542,11 +554,11 @@ NAPI_METHOD(Iterator::New) {
 
   }
 
-  bool keys = BooleanOptionValue(env, JsValue(optionsObj), "keys", true);
-  bool values = BooleanOptionValue(env, JsValue(optionsObj), "values", true);
-  bool keyAsBuffer = BooleanOptionValue(env, JsValue(optionsObj), "keyAsBuffer", true);
-  bool valueAsBuffer = BooleanOptionValue(env, JsValue(optionsObj), "valueAsBuffer", true);
-  bool fillCache = BooleanOptionValue(env, JsValue(optionsObj), "fillCache");
+  bool keys = BooleanOptionValue(env, optionsObj, "keys", true);
+  bool values = BooleanOptionValue(env, optionsObj, "values", true);
+  bool keyAsBuffer = BooleanOptionValue(env, optionsObj, "keyAsBuffer", true);
+  bool valueAsBuffer = BooleanOptionValue(env, optionsObj, "valueAsBuffer", true);
+  bool fillCache = BooleanOptionValue(env, optionsObj, "fillCache");
 
   Iterator* iterator = new Iterator(
       database
