@@ -52,7 +52,7 @@ void RepairDB (napi_env env, napi_func_cb_info info) {
   napi_set_return_value(env, info, napi_get_undefined_(env));
 }
 
-void NewInit(napi_env env, napi_value target, napi_value module) {
+void Init(napi_env env, napi_value target, napi_value module) {
   Database::Init(env);
   leveldown::Iterator::Init();
   leveldown::Batch::Init();
@@ -69,10 +69,6 @@ void NewInit(napi_env env, napi_value target, napi_value module) {
   napi_set_property(env, target, nameLeveldown, leveldown);
 }
 
-void Init (v8::Local<v8::Object> target, v8::Local<v8::Object> module) {
-  WorkaroundNewModuleInit(target, module, NewInit);
-}
-
-NODE_MODULE(leveldown, Init)
+NODE_MODULE_ABI(leveldown, Init)
 
 } // namespace leveldown
