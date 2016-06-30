@@ -102,41 +102,17 @@ static inline void DisposeStringOrBufferFromSlice(
 
 /* LD_METHOD_SETUP_COMMON setup the following objects:
  *  - Database* database
- *  - v8::Local<v8::Object> optionsObj (may be empty)
- *  - Nan::Persistent<v8::Function> callback (won't be empty)
+ *  - napi_value optionsObj (may be empty)
+ *  - napi_value callback (won't be empty)
  * Will throw/return if there isn't a callback in arg 0 or 1
  */
-#define LD_METHOD_SETUP_COMMON(name, optionPos, callbackPos)                   \
-  if (info.Length() == 0)                                                      \
-    return Nan::ThrowError(#name "() requires a callback argument");           \
-  leveldown::Database* database =                                              \
-    Nan::ObjectWrap::Unwrap<leveldown::Database>(info.This());                 \
-  v8::Local<v8::Object> optionsObj;                                            \
-  v8::Local<v8::Function> callback;                                            \
-  if (optionPos == -1 && info[callbackPos]->IsFunction()) {                    \
-    callback = info[callbackPos].As<v8::Function>();                           \
-  } else if (optionPos != -1 && info[callbackPos - 1]->IsFunction()) {         \
-    callback = info[callbackPos - 1].As<v8::Function>();                       \
-  } else if (optionPos != -1                                                   \
-        && info[optionPos]->IsObject()                                         \
-        && info[callbackPos]->IsFunction()) {                                  \
-    optionsObj = info[optionPos].As<v8::Object>();                             \
-    callback = info[callbackPos].As<v8::Function>();                           \
-  } else {                                                                     \
-    return Nan::ThrowError(#name "() requires a callback argument");           \
-  }
-
+// TODO (ianhall): We need a convenience api for throwing an error of any type with a message coming directly from a C string (copy Nan API)
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
-
-// TODO (ianhall): We need IsObject() and IsFunction() APIs to complete this conversion
-// TODO (ianhall): We need a convenience for throwing an error
-// TODO (ianhall): We need a CreateError() API to use instead of CreateTypeError()
-// NAPI NOTE (ianhall): API should have convenience for throwing new errors of different types with given string message (copy Nan API)
-#define LD_METHOD_SETUP_COMMON_NAPI(name, optionPos, callbackPos)              \
+#define LD_METHOD_SETUP_COMMON(name, optionPos, callbackPos)                   \
   int argsLength = napi_get_cb_args_length(env, info);                         \
   if (argsLength == 0) {                                                       \
     return napi_throw_error(env,                                               \
-      napi_create_type_error(env,                                              \
+      napi_create_error(env,                                                   \
         napi_create_string(env, #name "() requires a callback argument")));    \
   }                                                                            \
   napi_value args[MAX(optionPos+1, callbackPos+1)];                            \
@@ -147,32 +123,22 @@ static inline void DisposeStringOrBufferFromSlice(
   napi_value optionsObj = nullptr;                                             \
   napi_value callback = nullptr;                                               \
   if (optionPos == -1 &&                                                       \
-      V8LocalValue(args[callbackPos])->IsFunction()) {                         \
+      napi_get_type_of_value(env, args[callbackPos]) == napi_function) {       \
     callback = args[callbackPos];                                              \
   } else if (optionPos != -1 &&                                                \
-      V8LocalValue(args[callbackPos - 1])->IsFunction()) {                     \
+      napi_get_type_of_value(env, args[callbackPos - 1]) == napi_function) {   \
     callback = args[callbackPos - 1];                                          \
   } else if (optionPos != -1                                                   \
-        && V8LocalValue(args[optionPos])->IsObject()                           \
-        && V8LocalValue(args[callbackPos])->IsFunction()) {                    \
+        && napi_get_type_of_value(env, args[optionPos]) == napi_object         \
+        && napi_get_type_of_value(env, args[callbackPos]) == napi_function) {  \
     optionsObj = args[optionPos];                                              \
     callback = args[callbackPos];                                              \
   } else {                                                                     \
     return napi_throw_error(env,                                               \
-      napi_create_type_error(env,                                              \
+      napi_create_error(env,                                                   \
         napi_create_string(env, #name "() requires a callback argument")));    \
   }
 
-// TODO (ianhall): This is temporary, remove when no longer used
-#define LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8                                 \
-  v8::Local<v8::Object> info_This__ =                                          \
-    V8LocalValue(thisObj).As<v8::Object>();
-
 #define LD_METHOD_SETUP_COMMON_ONEARG(name) LD_METHOD_SETUP_COMMON(name, -1, 0)
-#define LD_METHOD_SETUP_COMMON_ONEARG_NAPI(name) LD_METHOD_SETUP_COMMON_NAPI(name, -1, 0)
-
-// TODO (ianhall): This should be moved to node_jsvmapi.h (or elsewhere?)
-#define NAPI_METHOD(name)                                                      \
-    void name(napi_env env, napi_func_cb_info info)
 
 #endif

@@ -226,9 +226,7 @@ napi_value Database::NewInstance (napi_value location) {
 }
 
 NAPI_METHOD(Database::Open) {
-  LD_METHOD_SETUP_COMMON_NAPI(open, 0, 1)
-
-  LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
+  LD_METHOD_SETUP_COMMON(open, 0, 1)
 
   bool createIfMissing = BooleanOptionValue(env, optionsObj, "createIfMissing", true);
   bool errorIfExists = BooleanOptionValue(env, optionsObj, "errorIfExists");
@@ -267,7 +265,7 @@ NAPI_METHOD(Database::Open) {
     , blockRestartInterval
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = info_This__;
+  v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
   worker->SaveToPersistent("database", _this);
   Nan::AsyncQueueWorker(worker);
 }
@@ -277,16 +275,14 @@ NAPI_METHOD(EmptyMethod) {
 }
 
 NAPI_METHOD(Database::Close) {
-  LD_METHOD_SETUP_COMMON_ONEARG_NAPI(close)
-
-  LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
+  LD_METHOD_SETUP_COMMON_ONEARG(close)
 
   CloseWorker* worker = new CloseWorker(
       database
     , callback
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = info_This__;
+  v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
   worker->SaveToPersistent("database", _this);
 
   if (!database->iterators.empty()) {
@@ -333,9 +329,7 @@ NAPI_METHOD(Database::Close) {
 }
 
 NAPI_METHOD(Database::Put) {
-  LD_METHOD_SETUP_COMMON_NAPI(put, 2, 3)
-
-  LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
+  LD_METHOD_SETUP_COMMON(put, 2, 3)
 
   v8::Local<v8::Object> keyHandle = V8LocalValue(args[0]).As<v8::Object>();
   v8::Local<v8::Object> valueHandle = V8LocalValue(args[1]).As<v8::Object>();
@@ -355,15 +349,13 @@ NAPI_METHOD(Database::Put) {
   );
 
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = info_This__;
+  v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
   worker->SaveToPersistent("database", _this);
   Nan::AsyncQueueWorker(worker);
 }
 
 NAPI_METHOD(Database::Get) {
-  LD_METHOD_SETUP_COMMON_NAPI(get, 1, 2)
-
-  LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
+  LD_METHOD_SETUP_COMMON(get, 1, 2)
 
   v8::Local<v8::Object> keyHandle = V8LocalValue(args[0]).As<v8::Object>();
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
@@ -380,15 +372,13 @@ NAPI_METHOD(Database::Get) {
     , keyHandle
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = info_This__;
+  v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
   worker->SaveToPersistent("database", _this);
   Nan::AsyncQueueWorker(worker);
 }
 
 NAPI_METHOD(Database::Delete) {
-  LD_METHOD_SETUP_COMMON_NAPI(del, 1, 2)
-
-  LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
+  LD_METHOD_SETUP_COMMON(del, 1, 2)
 
   v8::Local<v8::Object> keyHandle = V8LocalValue(args[0]).As<v8::Object>();
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
@@ -403,7 +393,7 @@ NAPI_METHOD(Database::Delete) {
     , keyHandle
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = info_This__;
+  v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
   worker->SaveToPersistent("database", _this);
   Nan::AsyncQueueWorker(worker);
 }
@@ -424,9 +414,7 @@ NAPI_METHOD(Database::Batch) {
     }
   }
 
-  LD_METHOD_SETUP_COMMON_NAPI(batch, 1, 2);
-
-  LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
+  LD_METHOD_SETUP_COMMON(batch, 1, 2);
 
   bool sync = BooleanOptionValue(env, optionsObj, "sync");
 
@@ -474,7 +462,7 @@ NAPI_METHOD(Database::Batch) {
       , sync
     );
     // persist to prevent accidental GC
-    v8::Local<v8::Object> _this = info_This__;
+    v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
     worker->SaveToPersistent("database", _this);
     Nan::AsyncQueueWorker(worker);
   } else {
@@ -484,9 +472,7 @@ NAPI_METHOD(Database::Batch) {
 }
 
 NAPI_METHOD(Database::ApproximateSize) {
-  LD_METHOD_SETUP_COMMON_NAPI(approximateSize, -1, 2)
-
-  LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
+  LD_METHOD_SETUP_COMMON(approximateSize, -1, 2)
 
   v8::Local<v8::Object> startHandle = V8LocalValue(args[0]).As<v8::Object>();
   v8::Local<v8::Object> endHandle = V8LocalValue(args[1]).As<v8::Object>();
@@ -503,7 +489,7 @@ NAPI_METHOD(Database::ApproximateSize) {
     , endHandle
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = info_This__;
+  v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
   worker->SaveToPersistent("database", _this);
   Nan::AsyncQueueWorker(worker);
 }
@@ -537,7 +523,6 @@ NAPI_METHOD(Database::Iterator) {
   napi_get_cb_args(env, info, args, 1);
   int argsLength = napi_get_cb_args_length(env, info);
   napi_value thisObj = napi_get_cb_this(env, info);
-  v8::Local<v8::Object> info_This__ = V8LocalValue(thisObj).As<v8::Object>();
 
   Database* database = static_cast<leveldown::Database*>(napi_unwrap(env, thisObj));
 
