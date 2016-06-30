@@ -57,9 +57,9 @@ void NewInit(napi_env env, napi_value target, napi_value module) {
   leveldown::Iterator::Init();
   leveldown::Batch::Init();
 
-  napi_propertyname nameDestroy = napi_proterty_name(env, "destroy");
-  napi_propertyname nameRepair = napi_proterty_name(env, "repair");
-  napi_propertyname nameLeveldown = napi_proterty_name(env, "leveldown");
+  napi_propertyname nameDestroy = napi_property_name(env, "destroy");
+  napi_propertyname nameRepair = napi_property_name(env, "repair");
+  napi_propertyname nameLeveldown = napi_property_name(env, "leveldown");
 
   napi_value leveldown = napi_create_function(env, LevelDOWN);
 
