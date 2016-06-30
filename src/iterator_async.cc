@@ -17,7 +17,7 @@ namespace leveldown {
 
 NextWorker::NextWorker (
     Iterator* iterator
-  , Nan::Callback *callback
+  , napi_value callback
   , void (*localCallback)(Iterator*)
 ) : AsyncWorker(NULL, callback)
   , iterator(iterator)
@@ -81,7 +81,7 @@ void NextWorker::HandleOKCallback () {
 
 EndWorker::EndWorker (
     Iterator* iterator
-  , Nan::Callback *callback
+  , napi_value callback
 ) : AsyncWorker(NULL, callback)
   , iterator(iterator)
 {};

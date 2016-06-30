@@ -19,7 +19,7 @@ class OpenWorker : public AsyncWorker {
 public:
   OpenWorker (
       Database *database
-    , Nan::Callback *callback
+    , napi_value callback
     , leveldb::Cache* blockCache
     , const leveldb::FilterPolicy* filterPolicy
     , bool createIfMissing
@@ -42,7 +42,7 @@ class CloseWorker : public AsyncWorker {
 public:
   CloseWorker (
       Database *database
-    , Nan::Callback *callback
+    , napi_value callback
   );
 
   virtual ~CloseWorker ();
@@ -54,7 +54,7 @@ class IOWorker    : public AsyncWorker {
 public:
   IOWorker (
       Database *database
-    , Nan::Callback *callback
+    , napi_value callback
     , leveldb::Slice key
     , v8::Local<v8::Object> &keyHandle
   );
@@ -70,7 +70,7 @@ class ReadWorker : public IOWorker {
 public:
   ReadWorker (
       Database *database
-    , Nan::Callback *callback
+    , napi_value callback
     , leveldb::Slice key
     , bool asBuffer
     , bool fillCache
@@ -91,7 +91,7 @@ class DeleteWorker : public IOWorker {
 public:
   DeleteWorker (
       Database *database
-    , Nan::Callback *callback
+    , napi_value callback
     , leveldb::Slice key
     , bool sync
     , v8::Local<v8::Object> &keyHandle
@@ -108,7 +108,7 @@ class WriteWorker : public DeleteWorker {
 public:
   WriteWorker (
       Database *database
-    , Nan::Callback *callback
+    , napi_value callback
     , leveldb::Slice key
     , leveldb::Slice value
     , bool sync
@@ -128,7 +128,7 @@ class BatchWorker : public AsyncWorker {
 public:
   BatchWorker (
       Database *database
-    , Nan::Callback *callback
+    , napi_value callback
     , leveldb::WriteBatch* batch
     , bool sync
   );
@@ -145,7 +145,7 @@ class ApproximateSizeWorker : public AsyncWorker {
 public:
   ApproximateSizeWorker (
       Database *database
-    , Nan::Callback *callback
+    , napi_value callback
     , leveldb::Slice start
     , leveldb::Slice end
     , v8::Local<v8::Object> &startHandle

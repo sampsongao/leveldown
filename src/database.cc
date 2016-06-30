@@ -255,7 +255,7 @@ NAPI_METHOD(Database::Open) {
 
   OpenWorker* worker = new OpenWorker(
       database
-    , new Nan::Callback(callback)
+    , callback
     , database->blockCache
     , database->filterPolicy
     , createIfMissing
@@ -283,7 +283,7 @@ NAPI_METHOD(Database::Close) {
 
   CloseWorker* worker = new CloseWorker(
       database
-    , new Nan::Callback(callback)
+    , callback
   );
   // persist to prevent accidental GC
   v8::Local<v8::Object> _this = info_This__;
@@ -346,7 +346,7 @@ NAPI_METHOD(Database::Put) {
 
   WriteWorker* worker  = new WriteWorker(
       database
-    , new Nan::Callback(callback)
+    , callback
     , key
     , value
     , sync
@@ -373,7 +373,7 @@ NAPI_METHOD(Database::Get) {
 
   ReadWorker* worker = new ReadWorker(
       database
-    , new Nan::Callback(callback)
+    , callback
     , key
     , asBuffer
     , fillCache
@@ -397,7 +397,7 @@ NAPI_METHOD(Database::Delete) {
 
   DeleteWorker* worker = new DeleteWorker(
       database
-    , new Nan::Callback(callback)
+    , callback
     , key
     , sync
     , keyHandle
@@ -469,7 +469,7 @@ NAPI_METHOD(Database::Batch) {
   if (hasData) {
     BatchWorker* worker = new BatchWorker(
         database
-      , new Nan::Callback(callback)
+      , callback
       , batch
       , sync
     );
@@ -478,7 +478,8 @@ NAPI_METHOD(Database::Batch) {
     worker->SaveToPersistent("database", _this);
     Nan::AsyncQueueWorker(worker);
   } else {
-    LD_RUN_CALLBACK(callback, 0, NULL);
+    // TODO (ianhall): Need a NAPI for making a callback?
+    LD_RUN_CALLBACK(V8LocalValue(callback).As<v8::Function>(), 0, NULL);
   }
 }
 
@@ -495,7 +496,7 @@ NAPI_METHOD(Database::ApproximateSize) {
 
   ApproximateSizeWorker* worker  = new ApproximateSizeWorker(
       database
-    , new Nan::Callback(callback)
+    , callback
     , start
     , end
     , startHandle
@@ -514,7 +515,6 @@ NAPI_METHOD(Database::GetProperty) {
   v8::Local<v8::Value> arg0 = V8LocalValue(args[0]);
 
   v8::Local<v8::Value> propertyHandle = arg0.As<v8::Object>();
-  v8::Local<v8::Function> callback; // for LD_STRING_OR_BUFFER_TO_SLICE
 
   LD_STRING_OR_BUFFER_TO_SLICE(property, propertyHandle, property)
 

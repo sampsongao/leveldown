@@ -18,8 +18,8 @@ class Database;
 public:
   AsyncWorker (
       leveldown::Database* database
-    , Nan::Callback *callback
-  ) : Nan::AsyncWorker(callback), database(database) { }
+    , napi_value callback
+  ) : Nan::AsyncWorker(new Nan::Callback(V8LocalValue(callback).As<v8::Function>())), database(database) { }
 
 protected:
   void SetStatus(leveldb::Status status) {

@@ -115,7 +115,6 @@ NAPI_METHOD(Batch::Put) {
   napi_get_cb_args(env, info, args, 2);
   napi_value holder = napi_get_cb_holder(env, info);
   Batch* batch = static_cast<Batch*>(napi_unwrap(env, holder));
-  v8::Local<v8::Function> callback; // purely for the error macros
 
   v8::Local<v8::Value> keyBuffer = V8LocalValue(args[0]);
   v8::Local<v8::Value> valueBuffer = V8LocalValue(args[1]);
@@ -137,8 +136,6 @@ NAPI_METHOD(Batch::Del) {
   napi_get_cb_args(env, info, args, 1);
   napi_value holder = napi_get_cb_holder(env, info);
   Batch* batch = static_cast<Batch*>(napi_unwrap(env, holder));
-
-  v8::Local<v8::Function> callback; // purely for the error macros
 
   v8::Local<v8::Value> keyBuffer = V8LocalValue(args[0]);
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
@@ -169,18 +166,15 @@ NAPI_METHOD(Batch::Write) {
   napi_value holder = napi_get_cb_holder(env, info);
   Batch* batch = static_cast<Batch*>(napi_unwrap(env, holder));
 
-  v8::Local<v8::Value> arg0 = V8LocalValue(args[0]);
-
   if (batch->hasData) {
-    Nan::Callback *callback =
-        new Nan::Callback(v8::Local<v8::Function>::Cast(arg0));
+    napi_value callback = args[0];
     BatchWriteWorker* worker  = new BatchWriteWorker(batch, callback);
     // persist to prevent accidental GC
     v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
     worker->SaveToPersistent("batch", _this);
     Nan::AsyncQueueWorker(worker);
   } else {
-    LD_RUN_CALLBACK(v8::Local<v8::Function>::Cast(arg0), 0, NULL);
+    LD_RUN_CALLBACK(v8::Local<v8::Function>::Cast(V8LocalValue(args[0])), 0, NULL);
   }
 }
 

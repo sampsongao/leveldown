@@ -16,7 +16,7 @@ class DestroyWorker : public AsyncWorker {
 public:
   DestroyWorker (
       Nan::Utf8String* location
-    , Nan::Callback *callback
+    , napi_value callback
   );
 
   virtual ~DestroyWorker ();
@@ -30,7 +30,7 @@ class RepairWorker : public AsyncWorker {
 public:
   RepairWorker (
       Nan::Utf8String* location
-    , Nan::Callback *callback
+    , napi_value callback
   );
 
   virtual ~RepairWorker ();

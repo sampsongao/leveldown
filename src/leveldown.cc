@@ -20,8 +20,7 @@ void DestroyDB (napi_env env, napi_func_cb_info info) {
 
   Nan::Utf8String* location = new Nan::Utf8String(V8LocalValue(args[0]));
 
-  Nan::Callback* callback = new Nan::Callback(
-      v8::Local<v8::Function>::Cast(V8LocalValue(args[1])));
+  napi_value callback = args[1];
 
   DestroyWorker* worker = new DestroyWorker(
       location
@@ -39,8 +38,7 @@ void RepairDB (napi_env env, napi_func_cb_info info) {
 
   Nan::Utf8String* location = new Nan::Utf8String(V8LocalValue(args[0]));
 
-  Nan::Callback* callback = new Nan::Callback(
-      v8::Local<v8::Function>::Cast(V8LocalValue(args[1])));
+  napi_value callback = args[1];
 
   RepairWorker* worker = new RepairWorker(
       location

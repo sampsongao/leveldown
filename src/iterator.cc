@@ -260,17 +260,15 @@ NAPI_METHOD(Iterator::Next) {
   napi_value thisObj = napi_get_cb_this(env, info);
   Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, thisObj));
 
-  v8::Local<v8::Value> arg0 = V8LocalValue(args[0]);
-
-  if (!arg0->IsFunction()) {
+  if (napi_get_type_of_value(env, args[0]) != napi_function) {
     return Nan::ThrowError("next() requires a callback argument");
   }
 
-  v8::Local<v8::Function> callback = arg0.As<v8::Function>();
+  napi_value callback = args[0];
 
   NextWorker* worker = new NextWorker(
       iterator
-    , new Nan::Callback(callback)
+    , callback
     , checkEndCallback
   );
   // persist to prevent accidental GC
@@ -289,18 +287,16 @@ NAPI_METHOD(Iterator::End) {
   napi_value thisObj = napi_get_cb_this(env, info);
   Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, thisObj));
 
-  v8::Local<v8::Value> arg0 = V8LocalValue(args[0]);
-
-  if (!arg0->IsFunction()) {
+  if (napi_get_type_of_value(env, args[0]) != napi_function) {
     return Nan::ThrowError("end() requires a callback argument");
   }
 
   if (!iterator->ended) {
-    v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(arg0);
+    napi_value callback = args[0];
 
     EndWorker* worker = new EndWorker(
         iterator
-      , new Nan::Callback(callback)
+      , callback
     );
     // persist to prevent accidental GC
     v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
