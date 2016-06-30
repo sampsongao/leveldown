@@ -230,20 +230,22 @@ NAPI_METHOD(Database::Open) {
 
   LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
 
-  bool createIfMissing = BooleanOptionValue(optionsObj, "createIfMissing", true);
-  bool errorIfExists = BooleanOptionValue(optionsObj, "errorIfExists");
-  bool compression = BooleanOptionValue(optionsObj, "compression", true);
+  bool createIfMissing = BooleanOptionValue(env, optionsObjNapi, "createIfMissing", true);
+  bool errorIfExists = BooleanOptionValue(env, optionsObjNapi, "errorIfExists");
+  bool compression = BooleanOptionValue(env, optionsObjNapi, "compression", true);
 
-  uint32_t cacheSize = UInt32OptionValue(optionsObj, "cacheSize", 8 << 20);
+  uint32_t cacheSize = UInt32OptionValue(env, optionsObjNapi, "cacheSize", 8 << 20);
   uint32_t writeBufferSize = UInt32OptionValue(
-      optionsObj
+      env
+    , optionsObjNapi
     , "writeBufferSize"
     , 4 << 20
   );
-  uint32_t blockSize = UInt32OptionValue(optionsObj, "blockSize", 4096);
-  uint32_t maxOpenFiles = UInt32OptionValue(optionsObj, "maxOpenFiles", 1000);
+  uint32_t blockSize = UInt32OptionValue(env, optionsObjNapi, "blockSize", 4096);
+  uint32_t maxOpenFiles = UInt32OptionValue(env, optionsObjNapi, "maxOpenFiles", 1000);
   uint32_t blockRestartInterval = UInt32OptionValue(
-      optionsObj
+      env
+    , optionsObjNapi
     , "blockRestartInterval"
     , 16
   );
@@ -340,7 +342,7 @@ NAPI_METHOD(Database::Put) {
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
   LD_STRING_OR_BUFFER_TO_SLICE(value, valueHandle, value);
 
-  bool sync = BooleanOptionValue(optionsObj, "sync");
+  bool sync = BooleanOptionValue(env, optionsObjNapi, "sync");
 
   WriteWorker* worker  = new WriteWorker(
       database
@@ -366,8 +368,8 @@ NAPI_METHOD(Database::Get) {
   v8::Local<v8::Object> keyHandle = V8LocalValue(args[0]).As<v8::Object>();
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
 
-  bool asBuffer = BooleanOptionValue(optionsObj, "asBuffer", true);
-  bool fillCache = BooleanOptionValue(optionsObj, "fillCache", true);
+  bool asBuffer = BooleanOptionValue(env, optionsObjNapi, "asBuffer", true);
+  bool fillCache = BooleanOptionValue(env, optionsObjNapi, "fillCache", true);
 
   ReadWorker* worker = new ReadWorker(
       database
@@ -391,7 +393,7 @@ NAPI_METHOD(Database::Delete) {
   v8::Local<v8::Object> keyHandle = V8LocalValue(args[0]).As<v8::Object>();
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
 
-  bool sync = BooleanOptionValue(optionsObj, "sync");
+  bool sync = BooleanOptionValue(env, optionsObjNapi, "sync");
 
   DeleteWorker* worker = new DeleteWorker(
       database
@@ -427,7 +429,7 @@ NAPI_METHOD(Database::Batch) {
 
   LD_METHOD_SETUP_COMMON_NAPI_BACK_TO_V8
 
-  bool sync = BooleanOptionValue(optionsObj, "sync");
+  bool sync = BooleanOptionValue(env, optionsObjNapi, "sync");
 
   v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(V8LocalValue(args[0]));
 

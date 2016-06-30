@@ -71,15 +71,13 @@ NAPI_METHOD(Batch::New) {
   napi_value thisObj = napi_get_cb_this(env, info);
 
   Database* database = static_cast<Database*>(napi_unwrap(env, args[0]));
-  v8::Local<v8::Object> optionsObj;
+  napi_value optionsObj = nullptr;
 
-  v8::Local<v8::Value> arg1 = V8LocalValue(args[1]);
-
-  if (argsLength > 1 && arg1->IsObject()) {
-    optionsObj = v8::Local<v8::Object>::Cast(arg1);
+  if (argsLength > 1 && napi_get_type_of_value(env, args[1]) == napi_object) {
+    optionsObj = args[1];
   }
 
-  bool sync = BooleanOptionValue(optionsObj, "sync");
+  bool sync = BooleanOptionValue(env, optionsObj, "sync");
 
   Batch* batch = new Batch(database, sync);
   napi_wrap(env, thisObj, batch, Batch::Destructor, nullptr);

@@ -408,7 +408,7 @@ NAPI_METHOD(Iterator::New) {
   if (argsLength > 1 && arg2->IsObject()) {
     optionsObj = v8::Local<v8::Object>::Cast(arg2);
 
-    reverse = BooleanOptionValue(optionsObj, "reverse");
+    reverse = BooleanOptionValue(env, JsValue(optionsObj), "reverse");
 
     if (optionsObj->Has(Nan::New("start").ToLocalChecked())
         && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("start").ToLocalChecked()))
@@ -542,11 +542,11 @@ NAPI_METHOD(Iterator::New) {
 
   }
 
-  bool keys = BooleanOptionValue(optionsObj, "keys", true);
-  bool values = BooleanOptionValue(optionsObj, "values", true);
-  bool keyAsBuffer = BooleanOptionValue(optionsObj, "keyAsBuffer", true);
-  bool valueAsBuffer = BooleanOptionValue(optionsObj, "valueAsBuffer", true);
-  bool fillCache = BooleanOptionValue(optionsObj, "fillCache");
+  bool keys = BooleanOptionValue(env, JsValue(optionsObj), "keys", true);
+  bool values = BooleanOptionValue(env, JsValue(optionsObj), "values", true);
+  bool keyAsBuffer = BooleanOptionValue(env, JsValue(optionsObj), "keyAsBuffer", true);
+  bool valueAsBuffer = BooleanOptionValue(env, JsValue(optionsObj), "valueAsBuffer", true);
+  bool fillCache = BooleanOptionValue(env, JsValue(optionsObj), "fillCache");
 
   Iterator* iterator = new Iterator(
       database
