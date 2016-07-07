@@ -69,7 +69,7 @@ void CloseWorker::Execute () {
 }
 
 void CloseWorker::WorkComplete () {
-  Nan::HandleScope scope;
+  Napi::HandleScope scope;
   HandleOKCallback();
   delete callback;
   callback = NULL;
@@ -93,7 +93,7 @@ IOWorker::IOWorker (
 IOWorker::~IOWorker () {}
 
 void IOWorker::WorkComplete () {
-  Nan::HandleScope scope;
+  Napi::HandleScope scope;
 
   DisposeStringOrBufferFromSlice(GetFromPersistent("key"), key);
   AsyncWorker::WorkComplete();
@@ -111,7 +111,7 @@ ReadWorker::ReadWorker (
 ) : IOWorker(database, callback, key, keyHandle)
   , asBuffer(asBuffer)
 {
-  Nan::HandleScope scope;
+  Napi::HandleScope scope;
 
   options = new leveldb::ReadOptions();
   options->fill_cache = fillCache;
@@ -127,7 +127,7 @@ void ReadWorker::Execute () {
 }
 
 void ReadWorker::HandleOKCallback () {
-  Nan::HandleScope scope;
+  Napi::HandleScope scope;
 
   v8::Local<v8::Value> returnValue;
   if (asBuffer) {
@@ -155,7 +155,7 @@ DeleteWorker::DeleteWorker (
   , v8::Local<v8::Object> &keyHandle
 ) : IOWorker(database, callback, key, keyHandle)
 {
-  Nan::HandleScope scope;
+  Napi::HandleScope scope;
 
   options = new leveldb::WriteOptions();
   options->sync = sync;
@@ -183,7 +183,7 @@ WriteWorker::WriteWorker (
 ) : DeleteWorker(database, callback, key, sync, keyHandle)
   , value(value)
 {
-  Nan::HandleScope scope;
+  Napi::HandleScope scope;
 
   SaveToPersistent("value", valueHandle);
 };
@@ -195,7 +195,7 @@ void WriteWorker::Execute () {
 }
 
 void WriteWorker::WorkComplete () {
-  Nan::HandleScope scope;
+  Napi::HandleScope scope;
 
   DisposeStringOrBufferFromSlice(GetFromPersistent("value"), value);
   IOWorker::WorkComplete();
@@ -236,7 +236,7 @@ ApproximateSizeWorker::ApproximateSizeWorker (
 ) : AsyncWorker(database, callback)
   , range(start, end)
 {
-  Nan::HandleScope scope;
+  Napi::HandleScope scope;
 
   SaveToPersistent("start", startHandle);
   SaveToPersistent("end", endHandle);
@@ -249,7 +249,7 @@ void ApproximateSizeWorker::Execute () {
 }
 
 void ApproximateSizeWorker::WorkComplete() {
-  Nan::HandleScope scope;
+  Napi::HandleScope scope;
 
   DisposeStringOrBufferFromSlice(GetFromPersistent("start"), range.start);
   DisposeStringOrBufferFromSlice(GetFromPersistent("end"), range.limit);
@@ -257,7 +257,7 @@ void ApproximateSizeWorker::WorkComplete() {
 }
 
 void ApproximateSizeWorker::HandleOKCallback () {
-  Nan::HandleScope scope;
+  Napi::HandleScope scope;
 
   v8::Local<v8::Value> returnValue = Nan::New<v8::Number>((double) size);
   v8::Local<v8::Value> argv[] = {

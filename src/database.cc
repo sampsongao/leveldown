@@ -212,7 +212,7 @@ NAPI_METHOD(Database::New) {
 }
 
 napi_value Database::NewInstance (napi_env env, napi_value location) {
-  Nan::EscapableHandleScope scope;
+  Napi::EscapableHandleScope scope(env);
 
   napi_value instance;
 
@@ -221,7 +221,7 @@ napi_value Database::NewInstance (napi_env env, napi_value location) {
   napi_value argv[] = { location };
   instance = napi_new_instance(env, constructorHandle, 1, argv);
 
-  return JsValue(scope.Escape(V8LocalValue(instance)));
+  return scope.Escape(instance);
 }
 
 NAPI_METHOD(Database::Open) {

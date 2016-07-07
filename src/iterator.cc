@@ -48,7 +48,7 @@ Iterator::Iterator (
   , keyAsBuffer(keyAsBuffer)
   , valueAsBuffer(valueAsBuffer)
 {
-  Nan::HandleScope scope;
+  Napi::HandleScope scope;
 
   options    = new leveldb::ReadOptions();
   options->fill_cache = fillCache;
@@ -349,7 +349,7 @@ napi_value Iterator::NewInstance (
       , napi_value optionsObj
     ) {
 
-  Nan::EscapableHandleScope scope;
+  Napi::EscapableHandleScope scope(env);
 
   napi_value instance;
   napi_value constructorHandle = napi_get_persistent_value(env, iterator_constructor);
@@ -362,7 +362,7 @@ napi_value Iterator::NewInstance (
     instance = napi_new_instance(env, constructorHandle, 3, argv);
   }
 
-  return JsValue(scope.Escape(V8LocalValue(instance)));
+  return scope.Escape(instance);
 }
 
 NAPI_METHOD(Iterator::New) {

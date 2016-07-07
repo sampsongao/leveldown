@@ -91,7 +91,7 @@ napi_value Batch::NewInstance (
       , napi_value optionsObj
     ) {
 
-  Nan::EscapableHandleScope scope;
+  Napi::EscapableHandleScope scope(env);
 
   napi_value instance;
 
@@ -105,7 +105,7 @@ napi_value Batch::NewInstance (
     instance = napi_new_instance(env, constructorHandle, 2, argv);
   }
 
-  return JsValue(scope.Escape(V8LocalValue(instance)));
+  return scope.Escape(instance);
 }
 
 NAPI_METHOD(Batch::Put) {

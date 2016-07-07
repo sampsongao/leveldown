@@ -33,7 +33,7 @@ void NextWorker::Execute () {
 }
 
 void NextWorker::HandleOKCallback () {
-  Nan::HandleScope scope;
+  Napi::HandleScope scope;
   size_t idx = 0;
 
   size_t arraySize = result.size() * 2;
