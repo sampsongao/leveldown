@@ -13,7 +13,7 @@ namespace leveldown {
 /** DESTROY WORKER **/
 
 DestroyWorker::DestroyWorker (
-    Nan::Utf8String* location
+    Napi::Utf8String* location
   , napi_value callback
 ) : AsyncWorker(NULL, callback)
   , location(location)
@@ -31,7 +31,7 @@ void DestroyWorker::Execute () {
 /** REPAIR WORKER **/
 
 RepairWorker::RepairWorker (
-    Nan::Utf8String* location
+    Napi::Utf8String* location
   , napi_value callback
 ) : AsyncWorker(NULL, callback)
   , location(location)

@@ -15,7 +15,7 @@ namespace leveldown {
 class DestroyWorker : public AsyncWorker {
 public:
   DestroyWorker (
-      Nan::Utf8String* location
+      Napi::Utf8String* location
     , napi_value callback
   );
 
@@ -23,13 +23,13 @@ public:
   virtual void Execute ();
 
 private:
-  Nan::Utf8String* location;
+  Napi::Utf8String* location;
 };
 
 class RepairWorker : public AsyncWorker {
 public:
   RepairWorker (
-      Nan::Utf8String* location
+      Napi::Utf8String* location
     , napi_value callback
   );
 
@@ -37,7 +37,7 @@ public:
   virtual void Execute ();
 
 private:
-  Nan::Utf8String* location;
+  Napi::Utf8String* location;
 };
 
 } // namespace leveldown

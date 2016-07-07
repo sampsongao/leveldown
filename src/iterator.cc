@@ -220,7 +220,7 @@ NAPI_METHOD(Iterator::Seek) {
   Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, thisObj));
   iterator->GetIterator();
   leveldb::Iterator* dbIterator = iterator->dbIterator;
-  Nan::Utf8String key(V8LocalValue(args[0]));
+  Napi::Utf8String key(args[0]);
 
   dbIterator->Seek(*key);
   iterator->seeking = true;

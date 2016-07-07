@@ -80,7 +80,7 @@ public:
   ~Database ();
 
 private:
-  Nan::Utf8String* location;
+  Napi::Utf8String* location;
   leveldb::DB* db;
   uint32_t currentIteratorId;
   void(*pendingCloseWorker);

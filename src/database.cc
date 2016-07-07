@@ -23,7 +23,7 @@ namespace leveldown {
 static napi_persistent database_constructor;
 
 Database::Database (napi_value from)
-  : location(new Nan::Utf8String(V8LocalValue(from)))
+  : location(new Napi::Utf8String(from))
   , db(NULL)
   , currentIteratorId(0)
   , pendingCloseWorker(NULL)

@@ -18,7 +18,7 @@ void DestroyDB (napi_env env, napi_func_cb_info info) {
   napi_value args[2];
   napi_get_cb_args(env, info, args, 2);
 
-  Nan::Utf8String* location = new Nan::Utf8String(V8LocalValue(args[0]));
+  Napi::Utf8String* location = new Napi::Utf8String(args[0]);
 
   napi_value callback = args[1];
 
@@ -36,7 +36,7 @@ void RepairDB (napi_env env, napi_func_cb_info info) {
   napi_value args[2];
   napi_get_cb_args(env, info, args, 2);
 
-  Nan::Utf8String* location = new Nan::Utf8String(V8LocalValue(args[0]));
+  Napi::Utf8String* location = new Napi::Utf8String(args[0]);
 
   napi_value callback = args[1];
 
