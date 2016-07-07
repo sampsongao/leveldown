@@ -14,7 +14,8 @@ class Batch {
 public:
   static void Init(napi_env env);
   static napi_value NewInstance (
-      napi_value database
+      napi_env env
+    , napi_value database
     , napi_value optionsObj
   );
 

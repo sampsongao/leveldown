@@ -86,28 +86,26 @@ NAPI_METHOD(Batch::New) {
 }
 
 napi_value Batch::NewInstance (
-        napi_value databaseNapi
+        napi_env env
+      , napi_value database
       , napi_value optionsObj
     ) {
 
   Nan::EscapableHandleScope scope;
 
-  v8::Local<v8::Object> database = V8LocalValue(databaseNapi).As<v8::Object>();
+  napi_value instance;
 
-  v8::Local<v8::Object> instance;
-
-  v8::Local<v8::Function> constructorHandle =
-      V8PersistentValue(batch_constructor)->As<v8::Function>().Get(v8::Isolate::GetCurrent());
+  napi_value constructorHandle = napi_get_persistent_value(env, batch_constructor);
 
   if (optionsObj == nullptr) {
-    v8::Local<v8::Value> argv[1] = { database };
-    instance = constructorHandle->NewInstance(1, argv);
+    napi_value argv[1] = { database };
+    instance = napi_new_instance(env, constructorHandle, 1, argv);
   } else {
-    v8::Local<v8::Value> argv[2] = { database, V8LocalValue(optionsObj) };
-    instance = constructorHandle->NewInstance(2, argv);
+    napi_value argv[2] = { database, optionsObj };
+    instance = napi_new_instance(env, constructorHandle, 2, argv);
   }
 
-  return JsValue(scope.Escape(instance));
+  return JsValue(scope.Escape(V8LocalValue(instance)));
 }
 
 NAPI_METHOD(Batch::Put) {

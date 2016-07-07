@@ -133,7 +133,7 @@ void LevelDOWN (napi_env env, napi_func_cb_info info) {
 
   napi_value location = args[0];
 
-  napi_set_return_value(env, info, Database::NewInstance(location));
+  napi_set_return_value(env, info, Database::NewInstance(env, location));
 }
 
 void Database::Init (napi_env env) {
@@ -211,18 +211,17 @@ NAPI_METHOD(Database::New) {
   napi_set_return_value(env, info, thisObj);
 }
 
-napi_value Database::NewInstance (napi_value location) {
+napi_value Database::NewInstance (napi_env env, napi_value location) {
   Nan::EscapableHandleScope scope;
 
-  v8::Local<v8::Object> instance;
+  napi_value instance;
 
-  v8::Local<v8::Function> constructorHandle =
-      V8PersistentValue(database_constructor)->As<v8::Function>().Get(v8::Isolate::GetCurrent());
+  napi_value constructorHandle = napi_get_persistent_value(env, database_constructor);
 
-  v8::Local<v8::Value> argv[] = { V8LocalValue(location) };
-  instance = constructorHandle->NewInstance(1, argv);
+  napi_value argv[] = { location };
+  instance = napi_new_instance(env, constructorHandle, 1, argv);
 
-  return JsValue(scope.Escape(instance));
+  return JsValue(scope.Escape(V8LocalValue(instance)));
 }
 
 NAPI_METHOD(Database::Open) {
@@ -409,7 +408,7 @@ NAPI_METHOD(Database::Batch) {
         optionsObj = args[0];
       }
       napi_value thisObj = napi_get_cb_this(env, info);
-      napi_set_return_value(env, info, Batch::NewInstance(thisObj, optionsObj));
+      napi_set_return_value(env, info, Batch::NewInstance(env, thisObj, optionsObj));
       return;
     }
   }
@@ -534,7 +533,8 @@ NAPI_METHOD(Database::Iterator) {
   uint32_t id = database->currentIteratorId++;
   v8::TryCatch try_catch;
   napi_value iteratorHandle = Iterator::NewInstance(
-      thisObj
+      env
+    , thisObj
     , napi_create_number(env, id)
     , optionsObj
   );

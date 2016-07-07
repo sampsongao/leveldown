@@ -47,7 +47,7 @@ static inline void ClearReferences (std::vector<Reference *> *references) {
 class Database {
 public:
   static void Init (napi_env env);
-  static napi_value NewInstance (napi_value location);
+  static napi_value NewInstance (napi_env env, napi_value location);
 
   leveldb::Status OpenDatabase (leveldb::Options* options);
   leveldb::Status PutToDatabase (
