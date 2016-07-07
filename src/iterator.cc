@@ -435,14 +435,12 @@ NAPI_METHOD(Iterator::New) {
 
     napi_propertyname pnLimit = napi_property_name(env, "limit");
     if (optionsObj != nullptr && napi_has_property(env, optionsObj, pnLimit)) {
-      limit = v8::Local<v8::Integer>::Cast(
-          V8LocalValue(napi_get_property(env, optionsObj, pnLimit)))->Value();
+      limit = napi_get_value_int64(env, napi_get_property(env, optionsObj, pnLimit));
     }
 
     napi_propertyname pnHighWaterMark = napi_property_name(env, "highWaterMark");
     if (napi_has_property(env, optionsObj, pnHighWaterMark)) {
-      highWaterMark = v8::Local<v8::Integer>::Cast(
-            V8LocalValue(napi_get_property(env, optionsObj, pnHighWaterMark)))->Value();
+      highWaterMark = napi_get_value_int64(env, napi_get_property(env, optionsObj, pnHighWaterMark));
     }
 
     napi_propertyname pnLt = napi_property_name(env, "lt");
