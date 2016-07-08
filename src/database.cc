@@ -304,18 +304,17 @@ NAPI_METHOD(Database::Close) {
 
         leveldown::Iterator *iterator = it->second;
 
-        v8::Local<v8::Object> iteratorHandle = V8PersistentValue(iterator->handle)->As<v8::Object>().Get(v8::Isolate::GetCurrent());
+        napi_value iteratorHandle = napi_get_persistent_value(env, iterator->handle);
 
         if (!iterator->ended) {
-          v8::Local<v8::Function> end =
-              v8::Local<v8::Function>::Cast(iteratorHandle->Get(
-                  Nan::New<v8::String>("end").ToLocalChecked()));
-          v8::Local<v8::Value> argv[] = {
-              V8LocalValue(
-                  napi_create_function(env, EmptyMethod)) // empty callback
+          napi_propertyname pnEnd = napi_property_name(env, "end");
+          napi_value end = napi_get_property(env, iteratorHandle, pnEnd);
+          napi_value argv[] = {
+              napi_create_function(env, EmptyMethod) // empty callback
           };
-          Nan::MakeCallback(
-              iteratorHandle
+          napi_make_callback(
+              env
+            , iteratorHandle
             , end
             , 1
             , argv
@@ -465,8 +464,7 @@ NAPI_METHOD(Database::Batch) {
     worker->SaveToPersistent("database", _this);
     Nan::AsyncQueueWorker(worker);
   } else {
-    // TODO (ianhall): Need a NAPI for making a callback?
-    LD_RUN_CALLBACK(V8LocalValue(callback).As<v8::Function>(), 0, NULL);
+    LD_RUN_CALLBACK(callback, 0, NULL);
   }
 }
 

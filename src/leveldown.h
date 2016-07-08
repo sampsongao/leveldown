@@ -85,20 +85,23 @@ static inline void DisposeStringOrBufferFromSlice(
     );                                                                         \
   }
 
+// NOTE (ianhall): This macro is never used, but it is converted here for completeness
 #define LD_RETURN_CALLBACK_OR_ERROR(callback, msg)                             \
-  if (!callback.IsEmpty() && callback->IsFunction()) {                         \
-    v8::Local<v8::Value> argv[] = {                                            \
-      Nan::Error(msg)                                                          \
+  if (callback != nullptr                                                      \
+      && napi_function == napi_get_type_of_value(env, callback)) {             \
+    napi_value argv[] = {                                                      \
+      napi_create_error(env, napi_create_string(env, msg))                     \
     };                                                                         \
     LD_RUN_CALLBACK(callback, 1, argv)                                         \
-    info.GetReturnValue().SetUndefined();                                      \
+    napi_set_return_value(env, info, napi_get_undefined(env));                 \
     return;                                                                    \
   }                                                                            \
-  return Nan::ThrowError(msg);
+  return napi_throw_error(                                                     \
+      env, napi_create_error(env, napi_create_string(env, msg)));
 
 #define LD_RUN_CALLBACK(callback, argc, argv)                                  \
-  Nan::MakeCallback(                                                           \
-      Nan::GetCurrentContext()->Global(), callback, argc, argv);
+  napi_make_callback(                                                          \
+      env, napi_get_global_scope(env), callback, argc, argv);
 
 /* LD_METHOD_SETUP_COMMON setup the following objects:
  *  - Database* database
