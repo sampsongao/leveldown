@@ -87,7 +87,7 @@ IOWorker::IOWorker (
 {
   Nan::HandleScope scope;
 
-  SaveToPersistent("key", keyHandle);
+  SaveToPersistent("key", JsValue(keyHandle));
 };
 
 IOWorker::~IOWorker () {}
@@ -95,7 +95,7 @@ IOWorker::~IOWorker () {}
 void IOWorker::WorkComplete () {
   Napi::HandleScope scope;
 
-  DisposeStringOrBufferFromSlice(GetFromPersistent("key"), key);
+  DisposeStringOrBufferFromSlice(V8LocalValue(GetFromPersistent("key")), key);
   AsyncWorker::WorkComplete();
 }
 
@@ -115,7 +115,7 @@ ReadWorker::ReadWorker (
 
   options = new leveldb::ReadOptions();
   options->fill_cache = fillCache;
-  SaveToPersistent("key", keyHandle);
+  SaveToPersistent("key", JsValue(keyHandle));
 };
 
 ReadWorker::~ReadWorker () {
@@ -138,9 +138,9 @@ void ReadWorker::HandleOKCallback () {
   } else {
     returnValue = Nan::New<v8::String>((char*)value.data(), value.size()).ToLocalChecked();
   }
-  v8::Local<v8::Value> argv[] = {
-      Nan::Null()
-    , returnValue
+  napi_value argv[] = {
+      napi_get_null(napi_get_current_env())
+    , JsValue(returnValue)
   };
   callback->Call(2, argv);
 }
@@ -159,7 +159,7 @@ DeleteWorker::DeleteWorker (
 
   options = new leveldb::WriteOptions();
   options->sync = sync;
-  SaveToPersistent("key", keyHandle);
+  SaveToPersistent("key", JsValue(keyHandle));
 };
 
 DeleteWorker::~DeleteWorker () {
@@ -185,7 +185,7 @@ WriteWorker::WriteWorker (
 {
   Napi::HandleScope scope;
 
-  SaveToPersistent("value", valueHandle);
+  SaveToPersistent("value", JsValue(valueHandle));
 };
 
 WriteWorker::~WriteWorker () { }
@@ -197,7 +197,7 @@ void WriteWorker::Execute () {
 void WriteWorker::WorkComplete () {
   Napi::HandleScope scope;
 
-  DisposeStringOrBufferFromSlice(GetFromPersistent("value"), value);
+  DisposeStringOrBufferFromSlice(V8LocalValue(GetFromPersistent("value")), value);
   IOWorker::WorkComplete();
 }
 
@@ -238,8 +238,8 @@ ApproximateSizeWorker::ApproximateSizeWorker (
 {
   Napi::HandleScope scope;
 
-  SaveToPersistent("start", startHandle);
-  SaveToPersistent("end", endHandle);
+  SaveToPersistent("start", JsValue(startHandle));
+  SaveToPersistent("end", JsValue(endHandle));
 };
 
 ApproximateSizeWorker::~ApproximateSizeWorker () {}
@@ -251,17 +251,18 @@ void ApproximateSizeWorker::Execute () {
 void ApproximateSizeWorker::WorkComplete() {
   Napi::HandleScope scope;
 
-  DisposeStringOrBufferFromSlice(GetFromPersistent("start"), range.start);
-  DisposeStringOrBufferFromSlice(GetFromPersistent("end"), range.limit);
+  DisposeStringOrBufferFromSlice(V8LocalValue(GetFromPersistent("start")), range.start);
+  DisposeStringOrBufferFromSlice(V8LocalValue(GetFromPersistent("end")), range.limit);
   AsyncWorker::WorkComplete();
 }
 
 void ApproximateSizeWorker::HandleOKCallback () {
   Napi::HandleScope scope;
+  napi_env env = napi_get_current_env();
 
-  v8::Local<v8::Value> returnValue = Nan::New<v8::Number>((double) size);
-  v8::Local<v8::Value> argv[] = {
-      Nan::Null()
+  napi_value returnValue = napi_create_number(env, (double) size);
+  napi_value argv[] = {
+      napi_get_null(env)
     , returnValue
   };
   callback->Call(2, argv);

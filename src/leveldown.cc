@@ -27,7 +27,7 @@ void DestroyDB (napi_env env, napi_func_cb_info info) {
     , callback
   );
 
-  Nan::AsyncQueueWorker(worker);
+  Napi::AsyncQueueWorker(worker);
 
   napi_set_return_value(env, info, napi_get_undefined_(env));
 }
@@ -45,7 +45,7 @@ void RepairDB (napi_env env, napi_func_cb_info info) {
     , callback
   );
 
-  Nan::AsyncQueueWorker(worker);
+  Napi::AsyncQueueWorker(worker);
 
   napi_set_return_value(env, info, napi_get_undefined_(env));
 }

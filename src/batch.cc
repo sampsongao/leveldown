@@ -68,7 +68,7 @@ NAPI_METHOD(Batch::New) {
   napi_value args[2];
   napi_get_cb_args(env, info, args, 2);
   int argsLength = napi_get_cb_args_length(env, info);
-  napi_value thisObj = napi_get_cb_this(env, info);
+  napi_value _this = napi_get_cb_this(env, info);
 
   Database* database = static_cast<Database*>(napi_unwrap(env, args[0]));
   napi_value optionsObj = nullptr;
@@ -80,9 +80,9 @@ NAPI_METHOD(Batch::New) {
   bool sync = BooleanOptionValue(env, optionsObj, "sync");
 
   Batch* batch = new Batch(database, sync);
-  napi_wrap(env, thisObj, batch, Batch::Destructor, nullptr);
+  napi_wrap(env, _this, batch, Batch::Destructor, nullptr);
 
-  napi_set_return_value(env, info, thisObj);
+  napi_set_return_value(env, info, _this);
 }
 
 napi_value Batch::NewInstance (
@@ -160,7 +160,7 @@ NAPI_METHOD(Batch::Clear) {
 NAPI_METHOD(Batch::Write) {
   napi_value args[1];
   napi_get_cb_args(env, info, args, 1);
-  napi_value thisObj = napi_get_cb_this(env, info);
+  napi_value _this  = napi_get_cb_this(env, info);
   napi_value holder = napi_get_cb_holder(env, info);
   Batch* batch = static_cast<Batch*>(napi_unwrap(env, holder));
 
@@ -168,9 +168,8 @@ NAPI_METHOD(Batch::Write) {
     napi_value callback = args[0];
     BatchWriteWorker* worker  = new BatchWriteWorker(batch, callback);
     // persist to prevent accidental GC
-    v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
     worker->SaveToPersistent("batch", _this);
-    Nan::AsyncQueueWorker(worker);
+    Napi::AsyncQueueWorker(worker);
   } else {
     LD_RUN_CALLBACK(args[0], 0, NULL);
   }

@@ -68,11 +68,11 @@ void NextWorker::HandleOKCallback () {
   // clean up & handle the next/end state see iterator.cc/checkEndCallback
   localCallback(iterator);
 
-  v8::Local<v8::Value> argv[] = {
-      Nan::Null()
-    , returnArray
+  napi_value argv[] = {
+      napi_get_null(napi_get_current_env())
+    , JsValue(returnArray)
     // when ok === false all data has been read, so it's then finished
-    , Nan::New<v8::Boolean>(!ok)
+    , JsValue(Nan::New<v8::Boolean>(!ok))
   };
   callback->Call(3, argv);
 }

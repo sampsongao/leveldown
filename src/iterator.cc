@@ -208,7 +208,7 @@ void Iterator::Release () {
 void checkEndCallback (Iterator* iterator) {
   iterator->nexting = false;
   if (iterator->endWorker != NULL) {
-    Nan::AsyncQueueWorker(iterator->endWorker);
+    Napi::AsyncQueueWorker(iterator->endWorker);
     iterator->endWorker = NULL;
   }
 }
@@ -216,8 +216,8 @@ void checkEndCallback (Iterator* iterator) {
 NAPI_METHOD(Iterator::Seek) {
   napi_value args[1];
   napi_get_cb_args(env, info, args, 1);
-  napi_value thisObj = napi_get_cb_this(env, info);
-  Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, thisObj));
+  napi_value _this = napi_get_cb_this(env, info);
+  Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, _this));
   iterator->GetIterator();
   leveldb::Iterator* dbIterator = iterator->dbIterator;
   Napi::Utf8String key(args[0]);
@@ -257,8 +257,8 @@ NAPI_METHOD(Iterator::Seek) {
 NAPI_METHOD(Iterator::Next) {
   napi_value args[1];
   napi_get_cb_args(env, info, args, 1);
-  napi_value thisObj = napi_get_cb_this(env, info);
-  Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, thisObj));
+  napi_value _this = napi_get_cb_this(env, info);
+  Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, _this));
 
   if (napi_get_type_of_value(env, args[0]) != napi_function) {
     return Nan::ThrowError("next() requires a callback argument");
@@ -272,10 +272,9 @@ NAPI_METHOD(Iterator::Next) {
     , checkEndCallback
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
   worker->SaveToPersistent("iterator", _this);
   iterator->nexting = true;
-  Nan::AsyncQueueWorker(worker);
+  Napi::AsyncQueueWorker(worker);
 
   napi_value holder = napi_get_cb_holder(env, info);
   napi_set_return_value(env, info, holder);
@@ -284,8 +283,8 @@ NAPI_METHOD(Iterator::Next) {
 NAPI_METHOD(Iterator::End) {
   napi_value args[1];
   napi_get_cb_args(env, info, args, 1);
-  napi_value thisObj = napi_get_cb_this(env, info);
-  Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, thisObj));
+  napi_value _this = napi_get_cb_this(env, info);
+  Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, _this));
 
   if (napi_get_type_of_value(env, args[0]) != napi_function) {
     return Nan::ThrowError("end() requires a callback argument");
@@ -299,7 +298,6 @@ NAPI_METHOD(Iterator::End) {
       , callback
     );
     // persist to prevent accidental GC
-    v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
     worker->SaveToPersistent("iterator", _this);
     iterator->ended = true;
 
@@ -307,7 +305,7 @@ NAPI_METHOD(Iterator::End) {
       // waiting for a next() to return, queue the end
       iterator->endWorker = worker;
     } else {
-      Nan::AsyncQueueWorker(worker);
+      Napi::AsyncQueueWorker(worker);
     }
   }
 
@@ -569,10 +567,10 @@ NAPI_METHOD(Iterator::New) {
     , valueAsBuffer
     , highWaterMark
   );
-  napi_value thisObj = napi_get_cb_this(env, info);
-  napi_wrap(env, thisObj, iterator, Iterator::Destructor, &iterator->handle);
+  napi_value _this = napi_get_cb_this(env, info);
+  napi_wrap(env, _this, iterator, Iterator::Destructor, &iterator->handle);
 
-  napi_set_return_value(env, info, thisObj);
+  napi_set_return_value(env, info, _this);
 }
 
 void Iterator::Destructor(void* obj) {

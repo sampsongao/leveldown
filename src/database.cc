@@ -107,7 +107,7 @@ void Database::ReleaseIterator (uint32_t id) {
   // iterators to end before we can close them
   iterators.erase(id);
   if (iterators.empty() && pendingCloseWorker != NULL) {
-    Nan::AsyncQueueWorker((AsyncWorker*)pendingCloseWorker);
+    Napi::AsyncQueueWorker((AsyncWorker*)pendingCloseWorker);
     pendingCloseWorker = NULL;
   }
 }
@@ -202,13 +202,13 @@ void Database::Destructor (void* obj) {
 NAPI_METHOD(Database::New) {
   napi_value args[1];
   napi_get_cb_args(env, info, args, 1);
-  napi_value thisObj = napi_get_cb_this(env, info);
+  napi_value _this = napi_get_cb_this(env, info);
 
   Database* obj = new Database(args[0]);
 
-  napi_wrap(env, thisObj, obj, Database::Destructor, nullptr);
+  napi_wrap(env, _this, obj, Database::Destructor, nullptr);
 
-  napi_set_return_value(env, info, thisObj);
+  napi_set_return_value(env, info, _this);
 }
 
 napi_value Database::NewInstance (napi_env env, napi_value location) {
@@ -264,9 +264,8 @@ NAPI_METHOD(Database::Open) {
     , blockRestartInterval
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
   worker->SaveToPersistent("database", _this);
-  Nan::AsyncQueueWorker(worker);
+  Napi::AsyncQueueWorker(worker);
 }
 
 // for an empty callback to iterator.end()
@@ -281,7 +280,6 @@ NAPI_METHOD(Database::Close) {
     , callback
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
   worker->SaveToPersistent("database", _this);
 
   if (!database->iterators.empty()) {
@@ -322,7 +320,7 @@ NAPI_METHOD(Database::Close) {
         }
     }
   } else {
-    Nan::AsyncQueueWorker(worker);
+    Napi::AsyncQueueWorker(worker);
   }
 }
 
@@ -347,9 +345,8 @@ NAPI_METHOD(Database::Put) {
   );
 
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
   worker->SaveToPersistent("database", _this);
-  Nan::AsyncQueueWorker(worker);
+  Napi::AsyncQueueWorker(worker);
 }
 
 NAPI_METHOD(Database::Get) {
@@ -370,9 +367,8 @@ NAPI_METHOD(Database::Get) {
     , keyHandle
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
   worker->SaveToPersistent("database", _this);
-  Nan::AsyncQueueWorker(worker);
+  Napi::AsyncQueueWorker(worker);
 }
 
 NAPI_METHOD(Database::Delete) {
@@ -391,9 +387,8 @@ NAPI_METHOD(Database::Delete) {
     , keyHandle
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
   worker->SaveToPersistent("database", _this);
-  Nan::AsyncQueueWorker(worker);
+  Napi::AsyncQueueWorker(worker);
 }
 
 NAPI_METHOD(Database::Batch) {
@@ -406,8 +401,8 @@ NAPI_METHOD(Database::Batch) {
       if (argsLength > 0 && napi_get_type_of_value(env, optionsObj) == napi_object) {
         optionsObj = args[0];
       }
-      napi_value thisObj = napi_get_cb_this(env, info);
-      napi_set_return_value(env, info, Batch::NewInstance(env, thisObj, optionsObj));
+      napi_value _this = napi_get_cb_this(env, info);
+      napi_set_return_value(env, info, Batch::NewInstance(env, _this, optionsObj));
       return;
     }
   }
@@ -460,9 +455,8 @@ NAPI_METHOD(Database::Batch) {
       , sync
     );
     // persist to prevent accidental GC
-    v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
     worker->SaveToPersistent("database", _this);
-    Nan::AsyncQueueWorker(worker);
+    Napi::AsyncQueueWorker(worker);
   } else {
     LD_RUN_CALLBACK(callback, 0, NULL);
   }
@@ -486,15 +480,14 @@ NAPI_METHOD(Database::ApproximateSize) {
     , endHandle
   );
   // persist to prevent accidental GC
-  v8::Local<v8::Object> _this = V8LocalValue(thisObj).As<v8::Object>();
   worker->SaveToPersistent("database", _this);
-  Nan::AsyncQueueWorker(worker);
+  Napi::AsyncQueueWorker(worker);
 }
 
 NAPI_METHOD(Database::GetProperty) {
   napi_value args[1];
   napi_get_cb_args(env, info, args, 1);
-  napi_value thisObj = napi_get_cb_this(env, info);
+  napi_value _this = napi_get_cb_this(env, info);
 
   v8::Local<v8::Value> propertyHandle = V8LocalValue(args[0]).As<v8::Object>();
 
@@ -502,7 +495,7 @@ NAPI_METHOD(Database::GetProperty) {
 
   
   leveldown::Database* database =
-      static_cast<leveldown::Database*>(napi_unwrap(env, thisObj));
+      static_cast<leveldown::Database*>(napi_unwrap(env, _this));
 
   std::string* value = new std::string();
   database->GetPropertyFromDatabase(property, value);
@@ -517,9 +510,9 @@ NAPI_METHOD(Database::Iterator) {
   napi_value args[1];
   napi_get_cb_args(env, info, args, 1);
   int argsLength = napi_get_cb_args_length(env, info);
-  napi_value thisObj = napi_get_cb_this(env, info);
+  napi_value _this = napi_get_cb_this(env, info);
 
-  Database* database = static_cast<leveldown::Database*>(napi_unwrap(env, thisObj));
+  Database* database = static_cast<leveldown::Database*>(napi_unwrap(env, _this));
 
   napi_value optionsObj = nullptr;
   if (argsLength > 0 && napi_get_type_of_value(env, args[0]) == napi_object) {
@@ -532,7 +525,7 @@ NAPI_METHOD(Database::Iterator) {
   v8::TryCatch try_catch;
   napi_value iteratorHandle = Iterator::NewInstance(
       env
-    , thisObj
+    , _this
     , napi_create_number(env, id)
     , optionsObj
   );
