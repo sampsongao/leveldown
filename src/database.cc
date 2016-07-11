@@ -327,8 +327,8 @@ NAPI_METHOD(Database::Close) {
 NAPI_METHOD(Database::Put) {
   LD_METHOD_SETUP_COMMON(put, 2, 3)
 
-  v8::Local<v8::Object> keyHandle = V8LocalValue(args[0]).As<v8::Object>();
-  v8::Local<v8::Object> valueHandle = V8LocalValue(args[1]).As<v8::Object>();
+  napi_value keyHandle = args[0];
+  napi_value valueHandle = args[1];
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
   LD_STRING_OR_BUFFER_TO_SLICE(value, valueHandle, value);
 
@@ -352,7 +352,7 @@ NAPI_METHOD(Database::Put) {
 NAPI_METHOD(Database::Get) {
   LD_METHOD_SETUP_COMMON(get, 1, 2)
 
-  v8::Local<v8::Object> keyHandle = V8LocalValue(args[0]).As<v8::Object>();
+  napi_value keyHandle = args[0];
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
 
   bool asBuffer = BooleanOptionValue(env, optionsObj, "asBuffer", true);
@@ -374,7 +374,7 @@ NAPI_METHOD(Database::Get) {
 NAPI_METHOD(Database::Delete) {
   LD_METHOD_SETUP_COMMON(del, 1, 2)
 
-  v8::Local<v8::Object> keyHandle = V8LocalValue(args[0]).As<v8::Object>();
+  napi_value keyHandle = args[0];
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyHandle, key);
 
   bool sync = BooleanOptionValue(env, optionsObj, "sync");
@@ -420,11 +420,11 @@ NAPI_METHOD(Database::Batch) {
     if (!array->Get(i)->IsObject())
       continue;
 
-    v8::Local<v8::Object> obj = v8::Local<v8::Object>::Cast(array->Get(i));
-    v8::Local<v8::Value> keyBuffer = obj->Get(Nan::New("key").ToLocalChecked());
-    v8::Local<v8::Value> type = obj->Get(Nan::New("type").ToLocalChecked());
+    napi_value obj = JsValue(array->Get(i));
+    napi_value keyBuffer = napi_get_property(env, obj, napi_property_name(env, "key"));
+    napi_value type = napi_get_property(env, obj, napi_property_name(env, "type"));
 
-    if (type->StrictEquals(Nan::New("del").ToLocalChecked())) {
+    if (napi_strict_equals(env, type, napi_create_string(env, "del"))) {
       LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
 
       batch->Delete(key);
@@ -432,8 +432,8 @@ NAPI_METHOD(Database::Batch) {
         hasData = true;
 
       DisposeStringOrBufferFromSlice(keyBuffer, key);
-    } else if (type->StrictEquals(Nan::New("put").ToLocalChecked())) {
-      v8::Local<v8::Value> valueBuffer = obj->Get(Nan::New("value").ToLocalChecked());
+    } else if (napi_strict_equals(env, type, napi_create_string(env, "put"))) {
+      napi_value valueBuffer = napi_get_property(env, obj, napi_property_name(env, "value"));
 
       LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
       LD_STRING_OR_BUFFER_TO_SLICE(value, valueBuffer, value)
@@ -465,8 +465,8 @@ NAPI_METHOD(Database::Batch) {
 NAPI_METHOD(Database::ApproximateSize) {
   LD_METHOD_SETUP_COMMON(approximateSize, -1, 2)
 
-  v8::Local<v8::Object> startHandle = V8LocalValue(args[0]).As<v8::Object>();
-  v8::Local<v8::Object> endHandle = V8LocalValue(args[1]).As<v8::Object>();
+  napi_value startHandle = args[0];
+  napi_value endHandle = args[1];
 
   LD_STRING_OR_BUFFER_TO_SLICE(start, startHandle, start)
   LD_STRING_OR_BUFFER_TO_SLICE(end, endHandle, end)
@@ -489,7 +489,7 @@ NAPI_METHOD(Database::GetProperty) {
   napi_get_cb_args(env, info, args, 1);
   napi_value _this = napi_get_cb_this(env, info);
 
-  v8::Local<v8::Value> propertyHandle = V8LocalValue(args[0]).As<v8::Object>();
+  napi_value propertyHandle = args[0];
 
   LD_STRING_OR_BUFFER_TO_SLICE(property, propertyHandle, property)
 

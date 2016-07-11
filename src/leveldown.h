@@ -6,6 +6,7 @@
 #define LD_LEVELDOWN_H
 
 #include <node.h>
+#include <node_jsvmapi.h>
 #include <node_buffer.h>
 #include <leveldb/slice.h>
 #include <nan.h>
@@ -36,34 +37,40 @@ static inline void DisposeStringOrBufferFromSlice(
 }
 
 static inline void DisposeStringOrBufferFromSlice(
-        v8::Local<v8::Value> handle
+        napi_value handle
       , leveldb::Slice slice) {
 
-  if (!slice.empty() && !node::Buffer::HasInstance(handle))
+  if (!slice.empty() && !node::Buffer::HasInstance(V8LocalValue(handle)))
     delete[] slice.data();
 }
 
 // NOTE: must call DisposeStringOrBufferFromSlice() on objects created here
+// TODO (ianhall): The use of napi_get_string_utf8 below changes behavior of
+// the original leveldown code by adding the v8::String::REPLACE_INVALID_UTF8
+// flag to the WriteUtf8 call.  The napi needs to abstract or deal with
+// v8::String flags in some way compatible with existing native modules.
 #define LD_STRING_OR_BUFFER_TO_SLICE(to, from, name)                           \
   size_t to ## Sz_;                                                            \
   char* to ## Ch_;                                                             \
-  if (from->IsNull() || from->IsUndefined()) {                                 \
-    to ## Sz_ = 0;                                                             \
-    to ## Ch_ = 0;                                                             \
-  } else if (!from->ToObject().IsEmpty()                                       \
-      && node::Buffer::HasInstance(from->ToObject())) {                        \
-    to ## Sz_ = node::Buffer::Length(from->ToObject());                        \
-    to ## Ch_ = node::Buffer::Data(from->ToObject());                          \
-  } else {                                                                     \
-    v8::Local<v8::String> to ## Str = from->ToString();                        \
-    to ## Sz_ = to ## Str->Utf8Length();                                       \
-    to ## Ch_ = new char[to ## Sz_];                                           \
-    to ## Str->WriteUtf8(                                                      \
-        to ## Ch_                                                              \
-      , -1                                                                     \
-      , NULL, v8::String::NO_NULL_TERMINATION                                  \
-    );                                                                         \
-  }                                                                            \
+  {                                                                            \
+    napi_valuetype from ## Type_ = napi_get_type_of_value(env, from);          \
+    if (from ## Type_ == napi_null || from ## Type_ == napi_undefined) {       \
+      to ## Sz_ = 0;                                                           \
+      to ## Ch_ = 0;                                                           \
+    } else {                                                                   \
+      napi_value from ## Object_ = napi_coerce_to_object(env, from);           \
+      if (from ## Object_ != nullptr                                           \
+          && node::Buffer::HasInstance(V8LocalValue(from ## Object_))) {                      \
+        to ## Sz_ = node::Buffer::Length(V8LocalValue(from ## Object_));                      \
+        to ## Ch_ = node::Buffer::Data(V8LocalValue(from ## Object_));                        \
+      } else {                                                                 \
+        napi_value to ## Str_ = napi_coerce_to_string(env, from);              \
+        to ## Sz_ = napi_get_string_utf8_length(env, to ## Str_);              \
+        to ## Ch_ = new char[to ## Sz_];                                       \
+        napi_get_string_utf8(env, to ## Str_, to ## Ch_, -1);                  \
+      }                                                                        \
+    }                                                                          \
+  } \
   leveldb::Slice to(to ## Ch_, to ## Sz_);
 
 #define LD_STRING_OR_BUFFER_TO_COPY(to, from, name)                            \

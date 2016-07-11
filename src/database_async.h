@@ -56,7 +56,7 @@ public:
       Database *database
     , napi_value callback
     , leveldb::Slice key
-    , v8::Local<v8::Object> &keyHandle
+    , napi_value keyHandle
   );
 
   virtual ~IOWorker ();
@@ -74,7 +74,7 @@ public:
     , leveldb::Slice key
     , bool asBuffer
     , bool fillCache
-    , v8::Local<v8::Object> &keyHandle
+    , napi_value keyHandle
   );
 
   virtual ~ReadWorker ();
@@ -94,7 +94,7 @@ public:
     , napi_value callback
     , leveldb::Slice key
     , bool sync
-    , v8::Local<v8::Object> &keyHandle
+    , napi_value keyHandle
   );
 
   virtual ~DeleteWorker ();
@@ -112,8 +112,8 @@ public:
     , leveldb::Slice key
     , leveldb::Slice value
     , bool sync
-    , v8::Local<v8::Object> &keyHandle
-    , v8::Local<v8::Object> &valueHandle
+    , napi_value keyHandle
+    , napi_value valueHandle
   );
 
   virtual ~WriteWorker ();
@@ -148,8 +148,8 @@ public:
     , napi_value callback
     , leveldb::Slice start
     , leveldb::Slice end
-    , v8::Local<v8::Object> &startHandle
-    , v8::Local<v8::Object> &endHandle
+    , napi_value startHandle
+    , napi_value endHandle
   );
 
   virtual ~ApproximateSizeWorker ();

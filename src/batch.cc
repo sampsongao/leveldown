@@ -114,8 +114,8 @@ NAPI_METHOD(Batch::Put) {
   napi_value holder = napi_get_cb_holder(env, info);
   Batch* batch = static_cast<Batch*>(napi_unwrap(env, holder));
 
-  v8::Local<v8::Value> keyBuffer = V8LocalValue(args[0]);
-  v8::Local<v8::Value> valueBuffer = V8LocalValue(args[1]);
+  napi_value keyBuffer = args[0];
+  napi_value valueBuffer = args[1];
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
   LD_STRING_OR_BUFFER_TO_SLICE(value, valueBuffer, value)
 
@@ -135,7 +135,7 @@ NAPI_METHOD(Batch::Del) {
   napi_value holder = napi_get_cb_holder(env, info);
   Batch* batch = static_cast<Batch*>(napi_unwrap(env, holder));
 
-  v8::Local<v8::Value> keyBuffer = V8LocalValue(args[0]);
+  napi_value keyBuffer = args[0];
   LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
 
   batch->batch->Delete(key);

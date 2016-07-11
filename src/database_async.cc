@@ -81,13 +81,13 @@ IOWorker::IOWorker (
     Database *database
   , napi_value callback
   , leveldb::Slice key
-  , v8::Local<v8::Object> &keyHandle
+  , napi_value keyHandle
 ) : AsyncWorker(database, callback)
   , key(key)
 {
   Nan::HandleScope scope;
 
-  SaveToPersistent("key", JsValue(keyHandle));
+  SaveToPersistent("key", keyHandle);
 };
 
 IOWorker::~IOWorker () {}
@@ -95,7 +95,7 @@ IOWorker::~IOWorker () {}
 void IOWorker::WorkComplete () {
   Napi::HandleScope scope;
 
-  DisposeStringOrBufferFromSlice(V8LocalValue(GetFromPersistent("key")), key);
+  DisposeStringOrBufferFromSlice(GetFromPersistent("key"), key);
   AsyncWorker::WorkComplete();
 }
 
@@ -107,7 +107,7 @@ ReadWorker::ReadWorker (
   , leveldb::Slice key
   , bool asBuffer
   , bool fillCache
-  , v8::Local<v8::Object> &keyHandle
+  , napi_value keyHandle
 ) : IOWorker(database, callback, key, keyHandle)
   , asBuffer(asBuffer)
 {
@@ -115,7 +115,7 @@ ReadWorker::ReadWorker (
 
   options = new leveldb::ReadOptions();
   options->fill_cache = fillCache;
-  SaveToPersistent("key", JsValue(keyHandle));
+  SaveToPersistent("key", keyHandle);
 };
 
 ReadWorker::~ReadWorker () {
@@ -152,14 +152,14 @@ DeleteWorker::DeleteWorker (
   , napi_value callback
   , leveldb::Slice key
   , bool sync
-  , v8::Local<v8::Object> &keyHandle
+  , napi_value keyHandle
 ) : IOWorker(database, callback, key, keyHandle)
 {
   Napi::HandleScope scope;
 
   options = new leveldb::WriteOptions();
   options->sync = sync;
-  SaveToPersistent("key", JsValue(keyHandle));
+  SaveToPersistent("key", keyHandle);
 };
 
 DeleteWorker::~DeleteWorker () {
@@ -178,14 +178,14 @@ WriteWorker::WriteWorker (
   , leveldb::Slice key
   , leveldb::Slice value
   , bool sync
-  , v8::Local<v8::Object> &keyHandle
-  , v8::Local<v8::Object> &valueHandle
+  , napi_value keyHandle
+  , napi_value valueHandle
 ) : DeleteWorker(database, callback, key, sync, keyHandle)
   , value(value)
 {
   Napi::HandleScope scope;
 
-  SaveToPersistent("value", JsValue(valueHandle));
+  SaveToPersistent("value", valueHandle);
 };
 
 WriteWorker::~WriteWorker () { }
@@ -197,7 +197,7 @@ void WriteWorker::Execute () {
 void WriteWorker::WorkComplete () {
   Napi::HandleScope scope;
 
-  DisposeStringOrBufferFromSlice(V8LocalValue(GetFromPersistent("value")), value);
+  DisposeStringOrBufferFromSlice(GetFromPersistent("value"), value);
   IOWorker::WorkComplete();
 }
 
@@ -231,15 +231,15 @@ ApproximateSizeWorker::ApproximateSizeWorker (
   , napi_value callback
   , leveldb::Slice start
   , leveldb::Slice end
-  , v8::Local<v8::Object> &startHandle
-  , v8::Local<v8::Object> &endHandle
+  , napi_value startHandle
+  , napi_value endHandle
 ) : AsyncWorker(database, callback)
   , range(start, end)
 {
   Napi::HandleScope scope;
 
-  SaveToPersistent("start", JsValue(startHandle));
-  SaveToPersistent("end", JsValue(endHandle));
+  SaveToPersistent("start", startHandle);
+  SaveToPersistent("end", endHandle);
 };
 
 ApproximateSizeWorker::~ApproximateSizeWorker () {}
@@ -251,8 +251,8 @@ void ApproximateSizeWorker::Execute () {
 void ApproximateSizeWorker::WorkComplete() {
   Napi::HandleScope scope;
 
-  DisposeStringOrBufferFromSlice(V8LocalValue(GetFromPersistent("start")), range.start);
-  DisposeStringOrBufferFromSlice(V8LocalValue(GetFromPersistent("end")), range.limit);
+  DisposeStringOrBufferFromSlice(GetFromPersistent("start"), range.start);
+  DisposeStringOrBufferFromSlice(GetFromPersistent("end"), range.limit);
   AsyncWorker::WorkComplete();
 }
 
