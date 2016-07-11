@@ -35,9 +35,10 @@ void NextWorker::Execute () {
 void NextWorker::HandleOKCallback () {
   Napi::HandleScope scope;
   size_t idx = 0;
+  napi_env env = napi_get_current_env();
 
   size_t arraySize = result.size() * 2;
-  v8::Local<v8::Array> returnArray = Nan::New<v8::Array>(arraySize);
+  napi_value returnArray = napi_create_array_with_length(env, arraySize);
 
   for(idx = 0; idx < result.size(); ++idx) {
     std::pair<std::string, std::string> row = result[idx];
@@ -61,18 +62,18 @@ void NextWorker::HandleOKCallback () {
     }
 
     // put the key & value in a descending order, so that they can be .pop:ed in javascript-land
-    returnArray->Set(Nan::New<v8::Integer>(static_cast<int>(arraySize - idx * 2 - 1)), returnKey);
-    returnArray->Set(Nan::New<v8::Integer>(static_cast<int>(arraySize - idx * 2 - 2)), returnValue);
+    napi_set_element(env, returnArray, arraySize - idx * 2 - 1, JsValue(returnKey));
+    napi_set_element(env, returnArray, arraySize - idx * 2 - 2, JsValue(returnValue));
   }
 
   // clean up & handle the next/end state see iterator.cc/checkEndCallback
   localCallback(iterator);
 
   napi_value argv[] = {
-      napi_get_null(napi_get_current_env())
-    , JsValue(returnArray)
+      napi_get_null(env)
+    , returnArray
     // when ok === false all data has been read, so it's then finished
-    , JsValue(Nan::New<v8::Boolean>(!ok))
+    , napi_create_boolean(env, !ok)
   };
   callback->Call(3, argv);
 }

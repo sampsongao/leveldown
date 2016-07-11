@@ -396,7 +396,7 @@ NAPI_METHOD(Database::Batch) {
     napi_value args[1];
     napi_get_cb_args(env, info, args, 1);
     int argsLength = napi_get_cb_args_length(env, info);
-    if ((argsLength == 0 || argsLength == 1) && !V8LocalValue(args[0])->IsArray()) {
+    if ((argsLength == 0 || argsLength == 1) && !napi_is_array(env, args[0])) {
       napi_value optionsObj = nullptr;
       if (argsLength > 0 && napi_get_type_of_value(env, optionsObj) == napi_object) {
         optionsObj = args[0];
@@ -411,16 +411,18 @@ NAPI_METHOD(Database::Batch) {
 
   bool sync = BooleanOptionValue(env, optionsObj, "sync");
 
-  v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(V8LocalValue(args[0]));
+  napi_value array = args[0];
 
   leveldb::WriteBatch* batch = new leveldb::WriteBatch();
   bool hasData = false;
 
-  for (unsigned int i = 0; i < array->Length(); i++) {
-    if (!array->Get(i)->IsObject())
+  uint32_t length = napi_get_array_length(env, array);
+  for (unsigned int i = 0; i < length; i++) {
+    napi_value obj = napi_get_element(env, array, i);
+
+    if (napi_get_type_of_value(env, obj) != napi_object)
       continue;
 
-    napi_value obj = JsValue(array->Get(i));
     napi_value keyBuffer = napi_get_property(env, obj, napi_property_name(env, "key"));
     napi_value type = napi_get_property(env, obj, napi_property_name(env, "type"));
 
