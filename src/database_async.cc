@@ -95,7 +95,7 @@ IOWorker::~IOWorker () {}
 void IOWorker::WorkComplete () {
   Napi::HandleScope scope;
 
-  DisposeStringOrBufferFromSlice(GetFromPersistent("key"), key);
+  DisposeStringOrBufferFromSlice(napi_get_current_env(), GetFromPersistent("key"), key);
   AsyncWorker::WorkComplete();
 }
 
@@ -197,7 +197,7 @@ void WriteWorker::Execute () {
 void WriteWorker::WorkComplete () {
   Napi::HandleScope scope;
 
-  DisposeStringOrBufferFromSlice(GetFromPersistent("value"), value);
+  DisposeStringOrBufferFromSlice(napi_get_current_env(), GetFromPersistent("value"), value);
   IOWorker::WorkComplete();
 }
 
@@ -251,8 +251,8 @@ void ApproximateSizeWorker::Execute () {
 void ApproximateSizeWorker::WorkComplete() {
   Napi::HandleScope scope;
 
-  DisposeStringOrBufferFromSlice(GetFromPersistent("start"), range.start);
-  DisposeStringOrBufferFromSlice(GetFromPersistent("end"), range.limit);
+  DisposeStringOrBufferFromSlice(napi_get_current_env(), GetFromPersistent("start"), range.start);
+  DisposeStringOrBufferFromSlice(napi_get_current_env(), GetFromPersistent("end"), range.limit);
   AsyncWorker::WorkComplete();
 }
 

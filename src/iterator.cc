@@ -380,11 +380,6 @@ NAPI_METHOD(Iterator::New) {
 
   napi_value optionsObj = nullptr;
 
-  v8::Local<v8::Object> ltHandle;
-  v8::Local<v8::Object> lteHandle;
-  v8::Local<v8::Object> gtHandle;
-  v8::Local<v8::Object> gteHandle;
-
   char *startStr = NULL;
   std::string* lt = NULL;
   std::string* lte = NULL;
@@ -402,7 +397,7 @@ NAPI_METHOD(Iterator::New) {
     napi_propertyname pnStart = napi_property_name(env, "start");
     napi_value valStart = nullptr;
     if (napi_has_property(env, optionsObj, pnStart)
-        && (node::Buffer::HasInstance(V8LocalValue(valStart = napi_get_property(env, optionsObj, pnStart)))
+        && (napi_buffer_has_instance(env, valStart = napi_get_property(env, optionsObj, pnStart))
           || napi_get_type_of_value(env, valStart) == napi_string)) {
 
       napi_value startBuffer = valStart;
@@ -418,7 +413,7 @@ NAPI_METHOD(Iterator::New) {
     napi_propertyname pnEnd = napi_property_name(env, "end");
     napi_value valEnd = nullptr;
     if (napi_has_property(env, optionsObj, pnEnd)
-        && (node::Buffer::HasInstance(V8LocalValue(valEnd = napi_get_property(env, optionsObj, pnEnd)))
+        && (napi_buffer_has_instance(env, valEnd = napi_get_property(env, optionsObj, pnEnd))
           || napi_get_type_of_value(env, valEnd) == napi_string)) {
 
       napi_value endBuffer = valEnd;
@@ -444,7 +439,7 @@ NAPI_METHOD(Iterator::New) {
     napi_propertyname pnLt = napi_property_name(env, "lt");
     napi_value valLt = nullptr;
     if (napi_has_property(env, optionsObj, pnLt)
-        && (node::Buffer::HasInstance(V8LocalValue(valLt = napi_get_property(env, optionsObj, pnLt)))
+        && (napi_buffer_has_instance(env, valLt = napi_get_property(env, optionsObj, pnLt))
           || napi_get_type_of_value(env, valLt) == napi_string)) {
 
       napi_value ltBuffer = valLt;
@@ -469,7 +464,7 @@ NAPI_METHOD(Iterator::New) {
     napi_propertyname pnLte = napi_property_name(env, "lte");
     napi_value valLte = nullptr;
     if (napi_has_property(env, optionsObj, pnLte)
-        && (node::Buffer::HasInstance(V8LocalValue(valLte = napi_get_property(env, optionsObj, pnLte)))
+        && (napi_buffer_has_instance(env, valLte = napi_get_property(env, optionsObj, pnLte))
           || napi_get_type_of_value(env, valLte) == napi_string)) {
 
       napi_value lteBuffer = valLte;
@@ -494,7 +489,7 @@ NAPI_METHOD(Iterator::New) {
     napi_propertyname pnGt = napi_property_name(env, "gt");
     napi_value valGt = nullptr;
     if (napi_has_property(env, optionsObj, pnGt)
-        && (node::Buffer::HasInstance(V8LocalValue(valGt = napi_get_property(env, optionsObj, pnGt)))
+        && (napi_buffer_has_instance(env, valGt = napi_get_property(env, optionsObj, pnGt))
           || napi_get_type_of_value(env, valGt) == napi_string)) {
 
       napi_value gtBuffer = valGt;
@@ -519,7 +514,7 @@ NAPI_METHOD(Iterator::New) {
     napi_propertyname pnGte = napi_property_name(env, "gte");
     napi_value valGte = nullptr;
     if (napi_has_property(env, optionsObj, pnGte)
-        && (node::Buffer::HasInstance(V8LocalValue(valGte = napi_get_property(env, optionsObj, pnGte)))
+        && (napi_buffer_has_instance(env, valGte = napi_get_property(env, optionsObj, pnGte))
           || napi_get_type_of_value(env, valGte) == napi_string)) {
 
       napi_value gteBuffer = valGte;

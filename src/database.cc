@@ -431,7 +431,7 @@ NAPI_METHOD(Database::Batch) {
       if (!hasData)
         hasData = true;
 
-      DisposeStringOrBufferFromSlice(keyBuffer, key);
+      DisposeStringOrBufferFromSlice(env, keyBuffer, key);
     } else if (napi_strict_equals(env, type, napi_create_string(env, "put"))) {
       napi_value valueBuffer = napi_get_property(env, obj, napi_property_name(env, "value"));
 
@@ -441,8 +441,8 @@ NAPI_METHOD(Database::Batch) {
       if (!hasData)
         hasData = true;
 
-      DisposeStringOrBufferFromSlice(keyBuffer, key);
-      DisposeStringOrBufferFromSlice(valueBuffer, value);
+      DisposeStringOrBufferFromSlice(env, keyBuffer, key);
+      DisposeStringOrBufferFromSlice(env, valueBuffer, value);
     }
   }
 

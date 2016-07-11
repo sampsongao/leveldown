@@ -15,8 +15,8 @@ static inline size_t StringOrBufferLength(napi_env env, napi_value obj) {
   Nan::HandleScope scope;
 
   return (obj != nullptr
-    && node::Buffer::HasInstance(V8LocalValue(obj)->ToObject()))
-    ? node::Buffer::Length(V8LocalValue(obj)->ToObject())
+    && napi_buffer_has_instance(env, obj))
+    ? napi_buffer_length(env, obj)
     : napi_get_string_utf8_length(env, obj);
 }
 
@@ -39,10 +39,11 @@ static inline void DisposeStringOrBufferFromSlice(
 */
 
 static inline void DisposeStringOrBufferFromSlice(
-        napi_value handle
+        napi_env env
+      , napi_value handle
       , leveldb::Slice slice) {
 
-  if (!slice.empty() && !node::Buffer::HasInstance(V8LocalValue(handle)))
+  if (!slice.empty() && !napi_buffer_has_instance(env, handle))
     delete[] slice.data();
 }
 
@@ -62,9 +63,9 @@ static inline void DisposeStringOrBufferFromSlice(
     } else {                                                                   \
       napi_value from ## Object_ = napi_coerce_to_object(env, from);           \
       if (from ## Object_ != nullptr                                           \
-          && node::Buffer::HasInstance(V8LocalValue(from ## Object_))) {                      \
-        to ## Sz_ = node::Buffer::Length(V8LocalValue(from ## Object_));                      \
-        to ## Ch_ = node::Buffer::Data(V8LocalValue(from ## Object_));                        \
+          && napi_buffer_has_instance(env, from ## Object_)) {                 \
+        to ## Sz_ = napi_buffer_length(env, from ## Object_);                  \
+        to ## Ch_ = napi_buffer_data(env, from ## Object_);                    \
       } else {                                                                 \
         napi_value to ## Str_ = napi_coerce_to_string(env, from);              \
         to ## Sz_ = napi_get_string_utf8_length(env, to ## Str_);              \
@@ -81,10 +82,10 @@ static inline void DisposeStringOrBufferFromSlice(
   {                                                                            \
     napi_value from ## Object_ = napi_coerce_to_object(env, from);             \
     if (from ## Object_ != nullptr                                             \
-        && node::Buffer::HasInstance(V8LocalValue(from ## Object_))) {                      \
-      to ## Sz_ = node::Buffer::Length(V8LocalValue(from ## Object_));                      \
+        && napi_buffer_has_instance(env, from ## Object_)) {                   \
+      to ## Sz_ = napi_buffer_length(env, from ## Object_);                    \
       to ## Ch_ = new char[to ## Sz_];                                         \
-      memcpy(to ## Ch_, node::Buffer::Data(V8LocalValue(from ## Object_)), to ## Sz_);      \
+      memcpy(to ## Ch_, napi_buffer_data(env, from ## Object_), to ## Sz_);    \
     } else {                                                                   \
       napi_value to ## Str_ = napi_coerce_to_string(env, from);                \
       to ## Sz_ = napi_get_string_utf8_length(env, to ## Str_);                \

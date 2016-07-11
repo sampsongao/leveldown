@@ -123,8 +123,8 @@ NAPI_METHOD(Batch::Put) {
   if (!batch->hasData)
     batch->hasData = true;
 
-  DisposeStringOrBufferFromSlice(keyBuffer, key);
-  DisposeStringOrBufferFromSlice(valueBuffer, value);
+  DisposeStringOrBufferFromSlice(env, keyBuffer, key);
+  DisposeStringOrBufferFromSlice(env, valueBuffer, value);
 
   napi_set_return_value(env, info, holder);
 }
@@ -142,7 +142,7 @@ NAPI_METHOD(Batch::Del) {
   if (!batch->hasData)
     batch->hasData = true;
 
-  DisposeStringOrBufferFromSlice(keyBuffer, key);
+  DisposeStringOrBufferFromSlice(env, keyBuffer, key);
 
   napi_set_return_value(env, info, holder);
 }
