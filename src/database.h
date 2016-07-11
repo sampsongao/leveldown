@@ -23,29 +23,6 @@ namespace leveldown {
 
 void LevelDOWN (napi_env env, napi_func_cb_info info);
 
-/* TODO (ianhall): This code is unused so not converting it
-struct Reference {
-  Nan::Persistent<v8::Object> handle;
-  leveldb::Slice slice;
-
-  Reference(v8::Local<v8::Value> obj, leveldb::Slice slice) : slice(slice) {
-    v8::Local<v8::Object> _obj = Nan::New<v8::Object>();
-    _obj->Set(Nan::New("obj").ToLocalChecked(), obj);
-    handle.Reset(_obj);
-  };
-};
-
-static inline void ClearReferences (std::vector<Reference *> *references) {
-  for (std::vector<Reference *>::iterator it = references->begin()
-      ; it != references->end()
-      ; ) {
-    DisposeStringOrBufferFromSlice((*it)->handle, (*it)->slice);
-    it = references->erase(it);
-  }
-  delete references;
-}
-*/
-
 class Database {
 public:
   static void Init (napi_env env);

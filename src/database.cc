@@ -541,16 +541,6 @@ NAPI_METHOD(Database::Iterator) {
 
   database->iterators[id] = iterator;
 
-  // register our iterator
-  /*
-  v8::Local<v8::Object> obj = Nan::New<v8::Object>();
-  obj->Set(Nan::New("iterator"), iteratorHandle);
-  Nan::Persistent<v8::Object> persistent;
-  persistent.Reset(nan_isolate, obj);
-  database->iterators.insert(std::pair< uint32_t, Nan::Persistent<v8::Object> & >
-      (id, persistent));
-  */
-
   napi_set_return_value(env, info, iteratorHandle);
 }
 

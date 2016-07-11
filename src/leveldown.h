@@ -20,24 +20,6 @@ static inline size_t StringOrBufferLength(napi_env env, napi_value obj) {
     : napi_get_string_utf8_length(env, obj);
 }
 
-// NOTE: this MUST be called on objects created by
-// LD_STRING_OR_BUFFER_TO_SLICE
-/* TODO (ianhall): This code is unused to not converting it
-static inline void DisposeStringOrBufferFromSlice(
-        Nan::Persistent<v8::Object> &handle
-      , leveldb::Slice slice) {
-  Nan::HandleScope scope;
-
-  if (!slice.empty()) {
-    v8::Local<v8::Value> obj = Nan::New<v8::Object>(handle)->Get(Nan::New<v8::String>("obj").ToLocalChecked());
-    if (!node::Buffer::HasInstance(obj))
-      delete[] slice.data();
-  }
-
-  handle.Reset();
-}
-*/
-
 static inline void DisposeStringOrBufferFromSlice(
         napi_env env
       , napi_value handle
