@@ -11,17 +11,18 @@
 #include <leveldb/slice.h>
 #include <nan.h>
 
-static inline size_t StringOrBufferLength(v8::Local<v8::Value> obj) {
+static inline size_t StringOrBufferLength(napi_env env, napi_value obj) {
   Nan::HandleScope scope;
 
-  return (!obj->ToObject().IsEmpty()
-    && node::Buffer::HasInstance(obj->ToObject()))
-    ? node::Buffer::Length(obj->ToObject())
-    : obj->ToString()->Utf8Length();
+  return (obj != nullptr
+    && node::Buffer::HasInstance(V8LocalValue(obj)->ToObject()))
+    ? node::Buffer::Length(V8LocalValue(obj)->ToObject())
+    : napi_get_string_utf8_length(env, obj);
 }
 
 // NOTE: this MUST be called on objects created by
 // LD_STRING_OR_BUFFER_TO_SLICE
+/* TODO (ianhall): This code is unused to not converting it
 static inline void DisposeStringOrBufferFromSlice(
         Nan::Persistent<v8::Object> &handle
       , leveldb::Slice slice) {
@@ -35,6 +36,7 @@ static inline void DisposeStringOrBufferFromSlice(
 
   handle.Reset();
 }
+*/
 
 static inline void DisposeStringOrBufferFromSlice(
         napi_value handle
@@ -76,20 +78,19 @@ static inline void DisposeStringOrBufferFromSlice(
 #define LD_STRING_OR_BUFFER_TO_COPY(to, from, name)                            \
   size_t to ## Sz_;                                                            \
   char* to ## Ch_;                                                             \
-  if (!from->ToObject().IsEmpty()                                              \
-      && node::Buffer::HasInstance(from->ToObject())) {                        \
-    to ## Sz_ = node::Buffer::Length(from->ToObject());                        \
-    to ## Ch_ = new char[to ## Sz_];                                           \
-    memcpy(to ## Ch_, node::Buffer::Data(from->ToObject()), to ## Sz_);        \
-  } else {                                                                     \
-    v8::Local<v8::String> to ## Str = from->ToString();                        \
-    to ## Sz_ = to ## Str->Utf8Length();                                       \
-    to ## Ch_ = new char[to ## Sz_];                                           \
-    to ## Str->WriteUtf8(                                                      \
-        to ## Ch_                                                              \
-      , -1                                                                     \
-      , NULL, v8::String::NO_NULL_TERMINATION                                  \
-    );                                                                         \
+  {                                                                            \
+    napi_value from ## Object_ = napi_coerce_to_object(env, from);             \
+    if (from ## Object_ != nullptr                                             \
+        && node::Buffer::HasInstance(V8LocalValue(from ## Object_))) {                      \
+      to ## Sz_ = node::Buffer::Length(V8LocalValue(from ## Object_));                      \
+      to ## Ch_ = new char[to ## Sz_];                                         \
+      memcpy(to ## Ch_, node::Buffer::Data(V8LocalValue(from ## Object_)), to ## Sz_);      \
+    } else {                                                                   \
+      napi_value to ## Str_ = napi_coerce_to_string(env, from);                \
+      to ## Sz_ = napi_get_string_utf8_length(env, to ## Str_);                \
+      to ## Ch_ = new char[to ## Sz_];                                         \
+      napi_get_string_utf8(env, to ## Str_, to ## Ch_, -1);                    \
+    }                                                                          \
   }
 
 // NOTE (ianhall): This macro is never used, but it is converted here for completeness

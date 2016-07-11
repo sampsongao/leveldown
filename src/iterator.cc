@@ -405,10 +405,10 @@ NAPI_METHOD(Iterator::New) {
         && (node::Buffer::HasInstance(V8LocalValue(valStart = napi_get_property(env, optionsObj, pnStart)))
           || napi_get_type_of_value(env, valStart) == napi_string)) {
 
-      v8::Local<v8::Value> startBuffer = V8LocalValue(valStart);
+      napi_value startBuffer = valStart;
 
       // ignore start if it has size 0 since a Slice can't have length 0
-      if (StringOrBufferLength(startBuffer) > 0) {
+      if (StringOrBufferLength(env, startBuffer) > 0) {
         LD_STRING_OR_BUFFER_TO_COPY(_start, startBuffer, start)
         start = new leveldb::Slice(_startCh_, _startSz_);
         startStr = _startCh_;
@@ -421,10 +421,10 @@ NAPI_METHOD(Iterator::New) {
         && (node::Buffer::HasInstance(V8LocalValue(valEnd = napi_get_property(env, optionsObj, pnEnd)))
           || napi_get_type_of_value(env, valEnd) == napi_string)) {
 
-      v8::Local<v8::Value> endBuffer = V8LocalValue(valEnd);
+      napi_value endBuffer = valEnd;
 
       // ignore end if it has size 0 since a Slice can't have length 0
-      if (StringOrBufferLength(endBuffer) > 0) {
+      if (StringOrBufferLength(env, endBuffer) > 0) {
         LD_STRING_OR_BUFFER_TO_COPY(_end, endBuffer, end)
         end = new std::string(_endCh_, _endSz_);
         delete[] _endCh_;
@@ -447,10 +447,10 @@ NAPI_METHOD(Iterator::New) {
         && (node::Buffer::HasInstance(V8LocalValue(valLt = napi_get_property(env, optionsObj, pnLt)))
           || napi_get_type_of_value(env, valLt) == napi_string)) {
 
-      v8::Local<v8::Value> ltBuffer = V8LocalValue(valLt);
+      napi_value ltBuffer = valLt;
 
       // ignore end if it has size 0 since a Slice can't have length 0
-      if (StringOrBufferLength(ltBuffer) > 0) {
+      if (StringOrBufferLength(env, ltBuffer) > 0) {
         LD_STRING_OR_BUFFER_TO_COPY(_lt, ltBuffer, lt)
         lt = new std::string(_ltCh_, _ltSz_);
         delete[] _ltCh_;
@@ -472,10 +472,10 @@ NAPI_METHOD(Iterator::New) {
         && (node::Buffer::HasInstance(V8LocalValue(valLte = napi_get_property(env, optionsObj, pnLte)))
           || napi_get_type_of_value(env, valLte) == napi_string)) {
 
-      v8::Local<v8::Value> lteBuffer = V8LocalValue(valLte);
+      napi_value lteBuffer = valLte;
 
       // ignore end if it has size 0 since a Slice can't have length 0
-      if (StringOrBufferLength(lteBuffer) > 0) {
+      if (StringOrBufferLength(env, lteBuffer) > 0) {
         LD_STRING_OR_BUFFER_TO_COPY(_lte, lteBuffer, lte)
         lte = new std::string(_lteCh_, _lteSz_);
         delete[] _lteCh_;
@@ -497,10 +497,10 @@ NAPI_METHOD(Iterator::New) {
         && (node::Buffer::HasInstance(V8LocalValue(valGt = napi_get_property(env, optionsObj, pnGt)))
           || napi_get_type_of_value(env, valGt) == napi_string)) {
 
-      v8::Local<v8::Value> gtBuffer = V8LocalValue(valGt);
+      napi_value gtBuffer = valGt;
 
       // ignore end if it has size 0 since a Slice can't have length 0
-      if (StringOrBufferLength(gtBuffer) > 0) {
+      if (StringOrBufferLength(env, gtBuffer) > 0) {
         LD_STRING_OR_BUFFER_TO_COPY(_gt, gtBuffer, gt)
         gt = new std::string(_gtCh_, _gtSz_);
         delete[] _gtCh_;
@@ -522,10 +522,10 @@ NAPI_METHOD(Iterator::New) {
         && (node::Buffer::HasInstance(V8LocalValue(valGte = napi_get_property(env, optionsObj, pnGte)))
           || napi_get_type_of_value(env, valGte) == napi_string)) {
 
-      v8::Local<v8::Value> gteBuffer = V8LocalValue(valGte);
+      napi_value gteBuffer = valGte;
 
       // ignore end if it has size 0 since a Slice can't have length 0
-      if (StringOrBufferLength(gteBuffer) > 0) {
+      if (StringOrBufferLength(env, gteBuffer) > 0) {
         LD_STRING_OR_BUFFER_TO_COPY(_gte, gteBuffer, gte)
         gte = new std::string(_gteCh_, _gteSz_);
         delete[] _gteCh_;

@@ -23,6 +23,7 @@ namespace leveldown {
 
 void LevelDOWN (napi_env env, napi_func_cb_info info);
 
+/* TODO (ianhall): This code is unused so not converting it
 struct Reference {
   Nan::Persistent<v8::Object> handle;
   leveldb::Slice slice;
@@ -43,6 +44,7 @@ static inline void ClearReferences (std::vector<Reference *> *references) {
   }
   delete references;
 }
+*/
 
 class Database {
 public:
