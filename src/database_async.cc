@@ -128,19 +128,20 @@ void ReadWorker::Execute () {
 
 void ReadWorker::HandleOKCallback () {
   Napi::HandleScope scope;
+  napi_env env = napi_get_current_env();
 
-  v8::Local<v8::Value> returnValue;
+  napi_value returnValue;
   if (asBuffer) {
     //TODO: could use NewBuffer if we carefully manage the lifecycle of `value`
     //and avoid an an extra allocation. We'd have to clean up properly when not OK
     //and let the new Buffer manage the data when OK
-    returnValue = Nan::CopyBuffer((char*)value.data(), value.size()).ToLocalChecked();
+    returnValue = napi_buffer_copy(env, value.data(), value.size());
   } else {
-    returnValue = Nan::New<v8::String>((char*)value.data(), value.size()).ToLocalChecked();
+    returnValue = napi_create_string_with_length(env, (char*)value.data(), value.size());
   }
   napi_value argv[] = {
-      napi_get_null(napi_get_current_env())
-    , JsValue(returnValue)
+      napi_get_null(env)
+    , returnValue
   };
   callback->Call(2, argv);
 }

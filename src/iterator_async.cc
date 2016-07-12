@@ -45,25 +45,25 @@ void NextWorker::HandleOKCallback () {
     std::string key = row.first;
     std::string value = row.second;
 
-    v8::Local<v8::Value> returnKey;
+    napi_value returnKey;
     if (iterator->keyAsBuffer) {
       //TODO: use NewBuffer, see database_async.cc
-      returnKey = Nan::CopyBuffer((char*)key.data(), key.size()).ToLocalChecked();
+      returnKey = napi_buffer_copy(env, key.data(), key.size());
     } else {
-      returnKey = Nan::New<v8::String>((char*)key.data(), key.size()).ToLocalChecked();
+      returnKey = napi_create_string_with_length(env, (char*)key.data(), key.size());
     }
 
-    v8::Local<v8::Value> returnValue;
+    napi_value returnValue;
     if (iterator->valueAsBuffer) {
       //TODO: use NewBuffer, see database_async.cc
-      returnValue = Nan::CopyBuffer((char*)value.data(), value.size()).ToLocalChecked();
+      returnValue = napi_buffer_copy(env, value.data(), value.size());
     } else {
-      returnValue = Nan::New<v8::String>((char*)value.data(), value.size()).ToLocalChecked();
+      returnValue = napi_create_string_with_length(env, (char*)value.data(), value.size());
     }
 
     // put the key & value in a descending order, so that they can be .pop:ed in javascript-land
-    napi_set_element(env, returnArray, arraySize - idx * 2 - 1, JsValue(returnKey));
-    napi_set_element(env, returnArray, arraySize - idx * 2 - 2, JsValue(returnValue));
+    napi_set_element(env, returnArray, arraySize - idx * 2 - 1, returnKey);
+    napi_set_element(env, returnArray, arraySize - idx * 2 - 2, returnValue);
   }
 
   // clean up & handle the next/end state see iterator.cc/checkEndCallback
