@@ -524,16 +524,42 @@ NAPI_METHOD(Database::Iterator) {
   // each iterator gets a unique id for this Database, so we can
   // easily store & lookup on our `iterators` map
   uint32_t id = database->currentIteratorId++;
-  v8::TryCatch try_catch;
-  napi_value iteratorHandle = Iterator::NewInstance(
+
+  napi_value iteratorHandle;
+  struct try_catch_data {
+    napi_value& iteratorHandle;
+    napi_value& _this;
+    uint32_t& id;
+    napi_value& optionsObj;
+  } data = {
+    iteratorHandle,
+    _this,
+    id,
+    optionsObj
+  };
+
+  bool did_catch = napi_try_catch(
       env
-    , _this
-    , napi_create_number(env, id)
-    , optionsObj
+    , [](napi_env env, void* data) {
+        try_catch_data* d = static_cast<try_catch_data*>(data);
+        d->iteratorHandle = Iterator::NewInstance(
+            env
+          , d->_this
+          , napi_create_number(env, d->id)
+          , d->optionsObj
+        );
+      }
+    , [](napi_env env, void* data) {
+        // NB: node::FatalException can segfault here if there is no room on stack.
+        napi_throw_error(env,
+          napi_create_error(env,
+            napi_create_string(env, "Fatal Error in Database::Iterator!")));
+      }
+    , &data
   );
-  if (try_catch.HasCaught()) {
-    // NB: node::FatalException can segfault here if there is no room on stack.
-    return Nan::ThrowError("Fatal Error in Database::Iterator!");
+
+  if (did_catch) {
+      return;
   }
 
   leveldown::Iterator *iterator =
