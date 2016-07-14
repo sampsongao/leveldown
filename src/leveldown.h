@@ -12,7 +12,7 @@
 #include <nan.h>
 
 static inline size_t StringOrBufferLength(napi_env env, napi_value obj) {
-  Nan::HandleScope scope;
+  Napi::HandleScope scope;
 
   return (obj != nullptr
     && napi_buffer_has_instance(env, obj))

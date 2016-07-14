@@ -85,7 +85,7 @@ IOWorker::IOWorker (
 ) : AsyncWorker(database, callback)
   , key(key)
 {
-  Nan::HandleScope scope;
+  Napi::HandleScope scope;
 
   SaveToPersistent("key", keyHandle);
 };

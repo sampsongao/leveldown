@@ -261,7 +261,9 @@ NAPI_METHOD(Iterator::Next) {
   Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, _this));
 
   if (napi_get_type_of_value(env, args[0]) != napi_function) {
-    return Nan::ThrowError("next() requires a callback argument");
+    return napi_throw_error(env,
+      napi_create_error(env,
+        napi_create_string(env, "next() requires a callback argument")));
   }
 
   napi_value callback = args[0];
@@ -287,7 +289,9 @@ NAPI_METHOD(Iterator::End) {
   Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, _this));
 
   if (napi_get_type_of_value(env, args[0]) != napi_function) {
-    return Nan::ThrowError("end() requires a callback argument");
+    return napi_throw_error(env,
+      napi_create_error(env,
+        napi_create_string(env, "end() requires a callback argument")));
   }
 
   if (!iterator->ended) {
