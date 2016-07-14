@@ -87,7 +87,7 @@ static inline void DisposeStringOrBufferFromSlice(
     napi_set_return_value(env, info, napi_get_undefined(env));                 \
     return;                                                                    \
   }                                                                            \
-  return napi_throw_error(                                                     \
+  return napi_throw(                                                     \
       env, napi_create_error(env, napi_create_string(env, msg)));
 
 #define LD_RUN_CALLBACK(callback, argc, argv)                                  \
@@ -105,7 +105,7 @@ static inline void DisposeStringOrBufferFromSlice(
 #define LD_METHOD_SETUP_COMMON(name, optionPos, callbackPos)                   \
   int argsLength = napi_get_cb_args_length(env, info);                         \
   if (argsLength == 0) {                                                       \
-    return napi_throw_error(env,                                               \
+    return napi_throw(env,                                               \
       napi_create_error(env,                                                   \
         napi_create_string(env, #name "() requires a callback argument")));    \
   }                                                                            \
@@ -128,7 +128,7 @@ static inline void DisposeStringOrBufferFromSlice(
     optionsObj = args[optionPos];                                              \
     callback = args[callbackPos];                                              \
   } else {                                                                     \
-    return napi_throw_error(env,                                               \
+    return napi_throw(env,                                               \
       napi_create_error(env,                                                   \
         napi_create_string(env, #name "() requires a callback argument")));    \
   }

@@ -551,7 +551,7 @@ NAPI_METHOD(Database::Iterator) {
       }
     , [](napi_env env, void* data) {
         // NB: node::FatalException can segfault here if there is no room on stack.
-        napi_throw_error(env,
+        napi_throw(env,
           napi_create_error(env,
             napi_create_string(env, "Fatal Error in Database::Iterator!")));
       }
