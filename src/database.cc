@@ -137,59 +137,19 @@ void LevelDOWN (napi_env env, napi_func_cb_info info) {
 }
 
 void Database::Init (napi_env env) {
-  napi_value ctor = napi_create_constructor_for_wrap(env, Database::New);
-  napi_set_function_name(env, ctor, napi_property_name(env, "Database"));
-  // Was this never used?
-  //tpl->InstanceTemplate()->SetInternalFieldCount(1);
-  napi_value proto = napi_get_property(env, ctor, napi_property_name(env, "prototype"));
+  napi_method_descriptor methods [] = {
+    { Database::Open, "open" },
+    { Database::Close, "close" },
+    { Database::Put, "put" },
+    { Database::Get, "get" },
+    { Database::Delete, "del" },
+    { Database::Batch, "batch" },
+    { Database::ApproximateSize, "approximateSize" },
+    { Database::GetProperty, "getProperty" },
+    { Database::Iterator, "iterator" },
+  };
 
-  // Concern (ianhall): This verbose setting of functions on the prototype object defeats V8's Function/ObjectTemplate optimization
-  // Also very chatty.  Creating a constructor and setting methods on its prototype object should be a single API.
-
-  napi_value fnOpen = napi_create_function(env, Database::Open);
-  napi_propertyname pnOpen = napi_property_name(env, "open");
-  napi_set_function_name(env, fnOpen, pnOpen);
-  napi_set_property(env, proto, pnOpen, fnOpen);
-
-  napi_value fnClose = napi_create_function(env, Database::Close);
-  napi_propertyname pnClose = napi_property_name(env, "close");
-  napi_set_function_name(env, fnClose, pnClose);
-  napi_set_property(env, proto, pnClose, fnClose);
-
-  napi_value fnPut = napi_create_function(env, Database::Put);
-  napi_propertyname pnPut = napi_property_name(env, "put");
-  napi_set_function_name(env, fnPut, pnPut);
-  napi_set_property(env, proto, pnPut, fnPut);
-
-  napi_value fnGet = napi_create_function(env, Database::Get);
-  napi_propertyname pnGet = napi_property_name(env, "get");
-  napi_set_function_name(env, fnGet, pnGet);
-  napi_set_property(env, proto, pnGet, fnGet);
-
-  napi_value fnDelete = napi_create_function(env, Database::Delete);
-  napi_propertyname pnDel = napi_property_name(env, "del");
-  napi_set_function_name(env, fnDelete, pnDel);
-  napi_set_property(env, proto, pnDel, fnDelete);
-
-  napi_value fnBatch = napi_create_function(env, Database::Batch);
-  napi_propertyname pnBatch = napi_property_name(env, "batch");
-  napi_set_function_name(env, fnBatch, pnBatch);
-  napi_set_property(env, proto, pnBatch, fnBatch);
-
-  napi_value fnApproximateSize = napi_create_function(env, Database::ApproximateSize);
-  napi_propertyname pnApproximateSize = napi_property_name(env, "approximateSize");
-  napi_set_function_name(env, fnApproximateSize, pnApproximateSize);
-  napi_set_property(env, proto, pnApproximateSize, fnApproximateSize);
-
-  napi_value fnGetProperty = napi_create_function(env, Database::GetProperty);
-  napi_propertyname pnGetProperty = napi_property_name(env, "getProperty");
-  napi_set_function_name(env, fnGetProperty, pnGetProperty);
-  napi_set_property(env, proto, pnGetProperty, fnGetProperty);
-
-  napi_value fnIterator = napi_create_function(env, Database::Iterator);
-  napi_propertyname pnIterator = napi_property_name(env, "iterator");
-  napi_set_function_name(env, fnIterator, pnIterator);
-  napi_set_property(env, proto, pnIterator, fnIterator);
+  napi_value ctor = napi_create_constructor_for_wrap_with_methods(env, Database::New, "Database", 9, methods);
 
   database_constructor = napi_create_persistent(env, ctor);
 }

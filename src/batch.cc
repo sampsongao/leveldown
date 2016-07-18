@@ -33,33 +33,14 @@ leveldb::Status Batch::Write () {
 }
 
 void Batch::Init (napi_env env) {
-  napi_value ctor = napi_create_constructor_for_wrap(env, Batch::New);
-  napi_set_function_name(env, ctor, napi_property_name(env, "Batch"));
+  napi_method_descriptor methods[] = {
+    { Batch::Put, "put" },
+    { Batch::Del, "del" },
+    { Batch::Clear, "clear" },
+    { Batch::Write, "write" },
+  };
 
-  // Is this used? Is it for ObjectWrap?
-  //tpl->InstanceTemplate()->SetInternalFieldCount(1);
-
-  napi_value proto = napi_get_property(env, ctor, napi_property_name(env, "prototype"));
-
-  napi_value fnPut = napi_create_function(env, Batch::Put);
-  napi_propertyname pnPut = napi_property_name(env, "put");
-  napi_set_function_name(env, fnPut, pnPut);
-  napi_set_property(env, proto, pnPut, fnPut);
-
-  napi_value fnDel = napi_create_function(env, Batch::Del);
-  napi_propertyname pnDel = napi_property_name(env, "del");
-  napi_set_function_name(env, fnDel, pnDel);
-  napi_set_property(env, proto, pnDel, fnDel);
-
-  napi_value fnClear = napi_create_function(env, Batch::Clear);
-  napi_propertyname pnClear = napi_property_name(env, "clear");
-  napi_set_function_name(env, fnClear, pnClear);
-  napi_set_property(env, proto, pnClear, fnClear);
-
-  napi_value fnWrite = napi_create_function(env, Batch::Write);
-  napi_propertyname pnWrite = napi_property_name(env, "write");
-  napi_set_function_name(env, fnWrite, pnWrite);
-  napi_set_property(env, proto, pnWrite, fnWrite);
+  napi_value ctor = napi_create_constructor_for_wrap_with_methods(env, Batch::New, "Batch", 4, methods);
 
   batch_constructor = napi_create_persistent(env, ctor);
 }

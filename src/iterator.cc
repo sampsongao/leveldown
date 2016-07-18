@@ -318,28 +318,13 @@ NAPI_METHOD(Iterator::End) {
 }
 
 void Iterator::Init (napi_env env) {
-  napi_value ctor = napi_create_constructor_for_wrap(env, Iterator::New);
-  napi_set_function_name(env, ctor, napi_property_name(env, "Iterator"));
+  napi_method_descriptor methods [] = {
+    { Iterator::Seek, "seek" },
+    { Iterator::Next, "next" },
+    { Iterator::End, "end" },
+  };
 
-  // Was this never used?
-  //tpl->InstanceTemplate()->SetInternalFieldCount(1);
-
-  napi_value proto = napi_get_property(env, ctor, napi_property_name(env, "prototype"));
-
-  napi_value fnSeek = napi_create_function(env, Iterator::Seek);
-  napi_propertyname pnSeek = napi_property_name(env, "seek");
-  napi_set_function_name(env, fnSeek, pnSeek);
-  napi_set_property(env, proto, pnSeek, fnSeek);
-
-  napi_value fnNext = napi_create_function(env, Iterator::Next);
-  napi_propertyname pnNext = napi_property_name(env, "next");
-  napi_set_function_name(env, fnNext, pnNext);
-  napi_set_property(env, proto, pnNext, fnNext);
-
-  napi_value fnEnd = napi_create_function(env, Iterator::End);
-  napi_propertyname pnEnd = napi_property_name(env, "end");
-  napi_set_function_name(env, fnEnd, pnEnd);
-  napi_set_property(env, proto, pnEnd, fnEnd);
+  napi_value ctor = napi_create_constructor_for_wrap_with_methods(env, Iterator::New, "Iterator", 3, methods);
 
   iterator_constructor = napi_create_persistent(env, ctor);
 }
