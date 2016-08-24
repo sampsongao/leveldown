@@ -85,6 +85,8 @@ Iterator::~Iterator () {
     delete lte;
   if (gte != NULL)
     delete gte;
+  
+  napi_release_weakref(napi_get_current_env(), handle);
 };
 
 bool Iterator::GetIterator () {

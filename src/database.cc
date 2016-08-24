@@ -262,21 +262,25 @@ NAPI_METHOD(Database::Close) {
 
         leveldown::Iterator *iterator = it->second;
 
-        napi_value iteratorHandle = napi_get_persistent_value(env, iterator->handle);
-
-        if (!iterator->ended) {
-          napi_propertyname pnEnd = napi_property_name(env, "end");
-          napi_value end = napi_get_property(env, iteratorHandle, pnEnd);
-          napi_value argv[] = {
-              napi_create_function(env, EmptyMethod) // empty callback
-          };
-          napi_make_callback(
+        napi_value iteratorHandle;
+        if (napi_get_weakref_value(env, iterator->handle, &iteratorHandle)) {
+          if (!iterator->ended) {
+            napi_propertyname pnEnd = napi_property_name(env, "end");
+            napi_value end = napi_get_property(env, iteratorHandle, pnEnd);
+            napi_value argv [] = {
+                napi_create_function(env, EmptyMethod) // empty callback
+            };
+            napi_make_callback(
               env
-            , iteratorHandle
-            , end
-            , 1
-            , argv
-          );
+              , iteratorHandle
+              , end
+              , 1
+              , argv
+            );
+          }
+        }
+        else {
+          // todo(ianhall): fail?
         }
     }
   } else {

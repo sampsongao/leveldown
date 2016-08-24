@@ -75,7 +75,7 @@ private:
   size_t highWaterMark;
 
 public:
-  napi_persistent handle;
+  napi_weakref handle;
   bool keyAsBuffer;
   bool valueAsBuffer;
   bool nexting;
