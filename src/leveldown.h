@@ -9,7 +9,6 @@
 #include <node_jsvmapi.h>
 #include <node_buffer.h>
 #include <leveldb/slice.h>
-#include <nan.h>
 
 static inline size_t StringOrBufferLength(napi_env env, napi_value obj) {
   Napi::HandleScope scope;

@@ -7,7 +7,6 @@
 #define LD_ASYNC_H
 
 #include <node.h>
-#include <nan.h>
 #include "database.h"
 
 namespace leveldown {

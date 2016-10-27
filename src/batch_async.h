@@ -7,7 +7,6 @@
 #define LD_BATCH_ASYNC_H
 
 #include <node.h>
-#include <nan.h>
 
 #include "async.h"
 #include "batch.h"

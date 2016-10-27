@@ -6,7 +6,6 @@
 #ifndef LD_COMMON_H
 #define LD_COMMON_H
 
-#include <nan.h>
 
 namespace leveldown {
 

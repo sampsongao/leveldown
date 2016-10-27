@@ -8,7 +8,6 @@
 
 #include <node.h>
 #include <vector>
-#include <nan.h>
 
 #include "leveldown.h"
 #include "database.h"
