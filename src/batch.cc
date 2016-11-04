@@ -60,9 +60,12 @@ NAPI_METHOD(Batch::New) {
   bool sync = BooleanOptionValue(env, optionsObj, "sync");
 
   Batch* batch = new Batch(database, sync);
-  napi_wrap(env, _this, batch, Batch::Destructor, nullptr);
 
-  napi_set_return_value(env, info, _this);
+  napi_value externalObj = napi_make_external(env, _this);
+
+  napi_wrap(env, externalObj, batch, Batch::Destructor, nullptr);
+
+  napi_set_return_value(env, info, externalObj);
 }
 
 napi_value Batch::NewInstance (

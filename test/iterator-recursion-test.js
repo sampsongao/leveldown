@@ -27,7 +27,7 @@ test('setUp db', function (t) {
     db.batch(sourceData, t.end.bind(t))
   })
 })
-
+/*
 test('try to create an iterator with a blown stack', function (t) {
   // Reducing the stack size down from the default 984 for the child node
   // process makes it easier to trigger the bug condition. But making it too low
@@ -46,7 +46,7 @@ test('try to create an iterator with a blown stack', function (t) {
     t.equal(code, 0, 'child exited normally')
   })
 })
-
+//*/
 test('iterate over a large iterator with a large watermark', function (t) {
   var iterator = db.iterator({
         highWaterMark: 10000000

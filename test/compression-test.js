@@ -10,7 +10,15 @@ var async      = require('async')
   , leveldown  = require('../')
   , test       = require('tape')
 
-  , compressableData = new Buffer(Array.apply(null, Array(1024 * 100)).map(function () { return 'aaaaaaaaaa' }).join(''))
+  // , arr1 = Array(1024 * 100)
+  // , arr2 = Array.apply(null, arr1)
+  // , arr3 = arr2.map(function () { return 'aaaaaaaaaa' })
+  // , arr4 = arr3.join('')
+  
+  , arr4 = Array(1024000).fill('a').join('')
+  , compressableData = new Buffer(arr4)
+  
+  
   , multiples = 10
   , dataSize = compressableData.length * multiples
 
@@ -46,6 +54,7 @@ test('Compression', function (t) {
 
   t.test('test data is compressed by default (db.put())', function (t) {
     var db = leveldown(common.location())
+    
     db.open(function (err) {
       t.error(err)
       async.forEach(

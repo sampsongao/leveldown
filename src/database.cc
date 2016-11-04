@@ -166,9 +166,11 @@ NAPI_METHOD(Database::New) {
 
   Database* obj = new Database(args[0]);
 
-  napi_wrap(env, _this, obj, Database::Destructor, nullptr);
+  napi_value externalObj = napi_make_external(env, _this);
 
-  napi_set_return_value(env, info, _this);
+  napi_wrap(env, externalObj, obj, Database::Destructor, nullptr);
+
+  napi_set_return_value(env, info, externalObj);
 }
 
 napi_value Database::NewInstance (napi_env env, napi_value location) {

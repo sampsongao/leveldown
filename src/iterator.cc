@@ -550,9 +550,12 @@ NAPI_METHOD(Iterator::New) {
     , highWaterMark
   );
   napi_value _this = napi_get_cb_this(env, info);
-  napi_wrap(env, _this, iterator, Iterator::Destructor, &iterator->handle);
 
-  napi_set_return_value(env, info, _this);
+  napi_value externalObj = napi_make_external(env, _this);
+
+  napi_wrap(env, externalObj, iterator, Iterator::Destructor, &iterator->handle);
+
+  napi_set_return_value(env, info, externalObj);
 }
 
 void Iterator::Destructor(void* obj) {
