@@ -6,7 +6,7 @@
 #define LD_LEVELDOWN_H
 
 #include <node.h>
-#include <node_jsvmapi.h>
+#include <node_api_helpers.h>
 #include <node_buffer.h>
 #include <leveldb/slice.h>
 
@@ -83,10 +83,10 @@ static inline void DisposeStringOrBufferFromSlice(
       napi_create_error(env, napi_create_string(env, msg))                     \
     };                                                                         \
     LD_RUN_CALLBACK(callback, 1, argv)                                         \
-    napi_set_return_value(env, info, napi_get_undefined(env));                 \
+    napi_set_return_value(env, info, napi_get_undefined_(env));                \
     return;                                                                    \
   }                                                                            \
-  return napi_throw(                                                     \
+  return napi_throw(                                                           \
       env, napi_create_error(env, napi_create_string(env, msg)));
 
 #define LD_RUN_CALLBACK(callback, argc, argv)                                  \
@@ -104,7 +104,7 @@ static inline void DisposeStringOrBufferFromSlice(
 #define LD_METHOD_SETUP_COMMON(name, optionPos, callbackPos)                   \
   int argsLength = napi_get_cb_args_length(env, info);                         \
   if (argsLength == 0) {                                                       \
-    return napi_throw(env,                                               \
+    return napi_throw(env,                                                     \
       napi_create_error(env,                                                   \
         napi_create_string(env, #name "() requires a callback argument")));    \
   }                                                                            \
@@ -127,7 +127,7 @@ static inline void DisposeStringOrBufferFromSlice(
     optionsObj = args[optionPos];                                              \
     callback = args[callbackPos];                                              \
   } else {                                                                     \
-    return napi_throw(env,                                               \
+    return napi_throw(env,                                                     \
       napi_create_error(env,                                                   \
         napi_create_string(env, #name "() requires a callback argument")));    \
   }

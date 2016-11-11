@@ -9,7 +9,7 @@
 #include <map>
 #include <vector>
 #include <node.h>
-#include <node_jsvmapi.h>
+#include <node_api_helpers.h>
 
 #include <leveldb/cache.h>
 #include <leveldb/db.h>
@@ -67,8 +67,8 @@ private:
 
   std::map< uint32_t, leveldown::Iterator * > iterators;
 
-  static void WriteDoing(uv_work_t *req);
-  static void WriteAfter(uv_work_t *req);
+  static void WriteDoing(napi_work req);
+  static void WriteAfter(napi_work req);
 
   static void Destructor (void* obj);
 

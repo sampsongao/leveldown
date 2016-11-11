@@ -4,7 +4,7 @@
  */
 
 #include <node.h>
-#include <node_jsvmapi.h>
+#include <node_api_helpers.h>
 
 #include "leveldown.h"
 #include "database.h"
