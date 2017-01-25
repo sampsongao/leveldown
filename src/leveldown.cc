@@ -14,7 +14,7 @@
 
 namespace leveldown {
 
-void DestroyDB (napi_env env, napi_func_cb_info info) {
+void DestroyDB (napi_env env, napi_callback_info info) {
   napi_value args[2];
   napi_get_cb_args(env, info, args, 2);
 
@@ -32,7 +32,7 @@ void DestroyDB (napi_env env, napi_func_cb_info info) {
   napi_set_return_value(env, info, napi_get_undefined_(env));
 }
 
-void RepairDB (napi_env env, napi_func_cb_info info) {
+void RepairDB (napi_env env, napi_callback_info info) {
   napi_value args[2];
   napi_get_cb_args(env, info, args, 2);
 
@@ -59,10 +59,10 @@ void Init(napi_env env, napi_value target, napi_value module) {
   napi_propertyname nameRepair = napi_property_name(env, "repair");
   napi_propertyname nameLeveldown = napi_property_name(env, "leveldown");
 
-  napi_value leveldown = napi_create_function(env, LevelDOWN);
+  napi_value leveldown = napi_create_function(env, LevelDOWN, nullptr);
 
-  napi_set_property(env, leveldown, nameDestroy, napi_create_function(env, DestroyDB));
-  napi_set_property(env, leveldown, nameRepair, napi_create_function(env, RepairDB));
+  napi_set_property(env, leveldown, nameDestroy, napi_create_function(env, DestroyDB, nullptr));
+  napi_set_property(env, leveldown, nameRepair, napi_create_function(env, RepairDB, nullptr));
 
   napi_set_property(env, target, nameLeveldown, leveldown);
 }

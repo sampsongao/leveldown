@@ -316,13 +316,13 @@ NAPI_METHOD(Iterator::End) {
 }
 
 void Iterator::Init (napi_env env) {
-  napi_method_descriptor methods [] = {
-    { Iterator::Seek, "seek" },
-    { Iterator::Next, "next" },
-    { Iterator::End, "end" },
+  napi_property_descriptor methods [] = {
+    { "seek", Iterator::Seek },
+    { "next", Iterator::Next },
+    { "end", Iterator::End },
   };
 
-  napi_value ctor = napi_create_constructor_for_wrap_with_methods(env, Iterator::New, "Iterator", 3, methods);
+  napi_value ctor = napi_create_constructor(env, "Iterator", Iterator::New, nullptr, 3, methods);
 
   iterator_constructor = napi_create_persistent(env, ctor);
 }

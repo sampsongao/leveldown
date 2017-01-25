@@ -32,14 +32,14 @@ leveldb::Status Batch::Write () {
 }
 
 void Batch::Init (napi_env env) {
-  napi_method_descriptor methods[] = {
-    { Batch::Put, "put" },
-    { Batch::Del, "del" },
-    { Batch::Clear, "clear" },
-    { Batch::Write, "write" },
+  napi_property_descriptor methods[] = {
+    { "put", Batch::Put },
+    { "del", Batch::Del },
+    { "clear", Batch::Clear },
+    { "write", Batch::Write },
   };
 
-  napi_value ctor = napi_create_constructor_for_wrap_with_methods(env, Batch::New, "Batch", 4, methods);
+  napi_value ctor = napi_create_constructor(env, "Batch", Batch::New, nullptr, 4, methods);
 
   batch_constructor = napi_create_persistent(env, ctor);
 }

@@ -20,7 +20,7 @@
 
 namespace leveldown {
 
-void LevelDOWN (napi_env env, napi_func_cb_info info);
+void LevelDOWN (napi_env env, napi_callback_info info);
 
 class Database {
 public:

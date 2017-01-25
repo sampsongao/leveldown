@@ -127,7 +127,7 @@ void Database::CloseDatabase () {
 
 /* V8 exposed functions *****************************/
 
-void LevelDOWN (napi_env env, napi_func_cb_info info) {
+void LevelDOWN (napi_env env, napi_callback_info info) {
   napi_value args[1];
   napi_get_cb_args(env, info, args, 1);
 
@@ -137,19 +137,19 @@ void LevelDOWN (napi_env env, napi_func_cb_info info) {
 }
 
 void Database::Init (napi_env env) {
-  napi_method_descriptor methods [] = {
-    { Database::Open, "open" },
-    { Database::Close, "close" },
-    { Database::Put, "put" },
-    { Database::Get, "get" },
-    { Database::Delete, "del" },
-    { Database::Batch, "batch" },
-    { Database::ApproximateSize, "approximateSize" },
-    { Database::GetProperty, "getProperty" },
-    { Database::Iterator, "iterator" },
+  napi_property_descriptor methods [] = {
+    { "open", Database::Open },
+    { "close", Database::Close },
+    { "put", Database::Put },
+    { "get", Database::Get },
+    { "del", Database::Delete },
+    { "batch", Database::Batch },
+    { "approximateSize", Database::ApproximateSize },
+    { "getProperty", Database::GetProperty },
+    { "iterator", Database::Iterator },
   };
 
-  napi_value ctor = napi_create_constructor_for_wrap_with_methods(env, Database::New, "Database", 9, methods);
+  napi_value ctor = napi_create_constructor(env, "Database", Database::New, nullptr, 9, methods);
 
   database_constructor = napi_create_persistent(env, ctor);
 }
@@ -270,7 +270,7 @@ NAPI_METHOD(Database::Close) {
             napi_propertyname pnEnd = napi_property_name(env, "end");
             napi_value end = napi_get_property(env, iteratorHandle, pnEnd);
             napi_value argv [] = {
-                napi_create_function(env, EmptyMethod) // empty callback
+                napi_create_function(env, EmptyMethod, nullptr) // empty callback
             };
             napi_make_callback(
               env
@@ -492,39 +492,19 @@ NAPI_METHOD(Database::Iterator) {
   uint32_t id = database->currentIteratorId++;
 
   napi_value iteratorHandle;
-  struct try_catch_data {
-    napi_value& iteratorHandle;
-    napi_value& _this;
-    uint32_t& id;
-    napi_value& optionsObj;
-  } data = {
-    iteratorHandle,
-    _this,
-    id,
-    optionsObj
-  };
 
-  bool did_catch = napi_try_catch(
-      env
-    , [](napi_env env, void* data) {
-        try_catch_data* d = static_cast<try_catch_data*>(data);
-        d->iteratorHandle = Iterator::NewInstance(
-            env
-          , d->_this
-          , napi_create_number(env, d->id)
-          , d->optionsObj
-        );
-      }
-    , [](napi_env env, void* data) {
-        // NB: node::FatalException can segfault here if there is no room on stack.
-        napi_throw_error(env, "Fatal Error in Database::Iterator!");
-      }
-    , &data
+  iteratorHandle = Iterator::NewInstance(
+    env
+    , _this
+    , napi_create_number(env, id)
+    , optionsObj
   );
 
-  if (did_catch) {
-      return;
+  if (napi_is_exception_pending(env)) {
+    // NB: node::FatalException can segfault here if there is no room on stack.
+    napi_throw_error(env, "Fatal Error in Database::Iterator!");
   }
+
 
   leveldown::Iterator *iterator =
       static_cast<leveldown::Iterator*>(napi_unwrap(env, iteratorHandle));
