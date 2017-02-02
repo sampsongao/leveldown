@@ -35,10 +35,12 @@ void NextWorker::Execute () {
 void NextWorker::HandleOKCallback () {
   Napi::HandleScope scope;
   size_t idx = 0;
-  napi_env env = napi_get_current_env();
+  napi_env env;
+  CHECK_NAPI_RESULT(napi_get_current_env(&env));
 
   size_t arraySize = result.size() * 2;
-  napi_value returnArray = napi_create_array_with_length(env, arraySize);
+  napi_value returnArray;
+  CHECK_NAPI_RESULT(napi_create_array_with_length(env, arraySize, &returnArray));
 
   for(idx = 0; idx < result.size(); ++idx) {
     std::pair<std::string, std::string> row = result[idx];
@@ -48,32 +50,37 @@ void NextWorker::HandleOKCallback () {
     napi_value returnKey;
     if (iterator->keyAsBuffer) {
       //TODO: use NewBuffer, see database_async.cc
-      returnKey = napi_buffer_copy(env, key.data(), key.size());
+      CHECK_NAPI_RESULT(napi_buffer_copy(env, key.data(), key.size(), &returnKey));
     } else {
-      returnKey = napi_create_string_with_length(env, (char*)key.data(), key.size());
+      CHECK_NAPI_RESULT(napi_create_string_with_length(env, (char*)key.data(), key.size(), &returnKey));
     }
 
     napi_value returnValue;
     if (iterator->valueAsBuffer) {
       //TODO: use NewBuffer, see database_async.cc
-      returnValue = napi_buffer_copy(env, value.data(), value.size());
+      CHECK_NAPI_RESULT(napi_buffer_copy(env, value.data(), value.size(), &returnValue));
     } else {
-      returnValue = napi_create_string_with_length(env, (char*)value.data(), value.size());
+      CHECK_NAPI_RESULT(napi_create_string_with_length(env, (char*)value.data(), value.size(), &returnValue));
     }
 
     // put the key & value in a descending order, so that they can be .pop:ed in javascript-land
-    napi_set_element(env, returnArray, arraySize - idx * 2 - 1, returnKey);
-    napi_set_element(env, returnArray, arraySize - idx * 2 - 2, returnValue);
+    CHECK_NAPI_RESULT(napi_set_element(env, returnArray, arraySize - idx * 2 - 1, returnKey));
+    CHECK_NAPI_RESULT(napi_set_element(env, returnArray, arraySize - idx * 2 - 2, returnValue));
   }
 
   // clean up & handle the next/end state see iterator.cc/checkEndCallback
   localCallback(iterator);
 
+  napi_value nullVal;
+  CHECK_NAPI_RESULT(napi_get_null(env, &nullVal));
+  napi_value boolVal;
+  CHECK_NAPI_RESULT(napi_create_boolean(env, !ok, &boolVal));
+
   napi_value argv[] = {
-      napi_get_null(env)
+      nullVal
     , returnArray
     // when ok === false all data has been read, so it's then finished
-    , napi_create_boolean(env, !ok)
+    , boolVal
   };
   callback->Call(3, argv);
 }

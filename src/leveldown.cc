@@ -29,7 +29,9 @@ void DestroyDB (napi_env env, napi_callback_info info) {
 
   Napi::AsyncQueueWorker(worker);
 
-  napi_set_return_value(env, info, napi_get_undefined_(env));
+  napi_value undefined;
+  CHECK_NAPI_RESULT(napi_get_undefined(env, &undefined));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, undefined));
 }
 
 void RepairDB (napi_env env, napi_callback_info info) {
@@ -47,7 +49,9 @@ void RepairDB (napi_env env, napi_callback_info info) {
 
   Napi::AsyncQueueWorker(worker);
 
-  napi_set_return_value(env, info, napi_get_undefined_(env));
+  napi_value undefined;
+  CHECK_NAPI_RESULT(napi_get_undefined(env, &undefined));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, undefined));
 }
 
 void Init(napi_env env, napi_value target, napi_value module) {
@@ -55,16 +59,23 @@ void Init(napi_env env, napi_value target, napi_value module) {
   leveldown::Iterator::Init(env);
   leveldown::Batch::Init(env);
 
-  napi_propertyname nameDestroy = napi_property_name(env, "destroy");
-  napi_propertyname nameRepair = napi_property_name(env, "repair");
-  napi_propertyname nameLeveldown = napi_property_name(env, "leveldown");
+  napi_propertyname nameDestroy;
+  CHECK_NAPI_RESULT(napi_property_name(env, "destroy", &nameDestroy));
+  napi_propertyname nameRepair;
+  CHECK_NAPI_RESULT(napi_property_name(env, "repair", &nameRepair));
+  napi_propertyname nameLeveldown;
+  CHECK_NAPI_RESULT(napi_property_name(env, "leveldown", &nameLeveldown));
 
-  napi_value leveldown = napi_create_function(env, LevelDOWN, nullptr);
+  napi_value leveldown;
+  CHECK_NAPI_RESULT(napi_create_function(env, LevelDOWN, nullptr, &leveldown));
+  napi_value functionDestroy;
+  CHECK_NAPI_RESULT(napi_create_function(env, DestroyDB, nullptr, &functionDestroy));
+  napi_value functionRepair;
+  CHECK_NAPI_RESULT(napi_create_function(env, RepairDB, nullptr, &functionRepair));
 
-  napi_set_property(env, leveldown, nameDestroy, napi_create_function(env, DestroyDB, nullptr));
-  napi_set_property(env, leveldown, nameRepair, napi_create_function(env, RepairDB, nullptr));
-
-  napi_set_property(env, target, nameLeveldown, leveldown);
+  CHECK_NAPI_RESULT(napi_set_property(env, leveldown, nameDestroy, functionDestroy));
+  CHECK_NAPI_RESULT(napi_set_property(env, leveldown, nameRepair, functionRepair));
+  CHECK_NAPI_RESULT(napi_set_property(env, target, nameLeveldown, leveldown));
 }
 
 NODE_MODULE_ABI(leveldown, Init)

@@ -86,7 +86,9 @@ Iterator::~Iterator () {
   if (gte != NULL)
     delete gte;
   
-  napi_release_weakref(napi_get_current_env(), handle);
+  napi_env env;
+  CHECK_NAPI_RESULT(napi_get_current_env(&env));
+  CHECK_NAPI_RESULT(napi_release_weakref(env, handle));
 };
 
 bool Iterator::GetIterator () {
@@ -217,9 +219,12 @@ void checkEndCallback (Iterator* iterator) {
 
 NAPI_METHOD(Iterator::Seek) {
   napi_value args[1];
-  napi_get_cb_args(env, info, args, 1);
-  napi_value _this = napi_get_cb_this(env, info);
-  Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, _this));
+  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
+  napi_value _this;
+  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
+  void* unwrapped;
+  CHECK_NAPI_RESULT(napi_unwrap(env, _this, &unwrapped));
+  Iterator* iterator = static_cast<Iterator*>(unwrapped);
   iterator->GetIterator();
   leveldb::Iterator* dbIterator = iterator->dbIterator;
   Napi::Utf8String key(args[0]);
@@ -252,18 +257,25 @@ NAPI_METHOD(Iterator::Seek) {
     }
   }
 
-  napi_value holder = napi_get_cb_holder(env, info);
-  napi_set_return_value(env, info, holder);
+  napi_value holder;
+  CHECK_NAPI_RESULT(napi_get_cb_holder(env, info, &holder));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, holder));
 }
 
 NAPI_METHOD(Iterator::Next) {
   napi_value args[1];
-  napi_get_cb_args(env, info, args, 1);
-  napi_value _this = napi_get_cb_this(env, info);
-  Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, _this));
+  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
+  napi_value _this;
+  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
+  void* unwrapped;
+  CHECK_NAPI_RESULT(napi_unwrap(env, _this, &unwrapped));
+  Iterator* iterator = static_cast<Iterator*>(unwrapped);
 
-  if (napi_get_type_of_value(env, args[0]) != napi_function) {
-    return napi_throw_error(env, "next() requires a callback argument");
+  napi_valuetype t;
+  CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[0], &t));
+  if (t != napi_function) {
+    CHECK_NAPI_RESULT(napi_throw_error(env, "next() requires a callback argument"));
+    return;
   }
 
   napi_value callback = args[0];
@@ -278,18 +290,24 @@ NAPI_METHOD(Iterator::Next) {
   iterator->nexting = true;
   Napi::AsyncQueueWorker(worker);
 
-  napi_value holder = napi_get_cb_holder(env, info);
-  napi_set_return_value(env, info, holder);
+  napi_value holder;
+  CHECK_NAPI_RESULT(napi_get_cb_holder(env, info, &holder));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, holder));
 }
 
 NAPI_METHOD(Iterator::End) {
   napi_value args[1];
-  napi_get_cb_args(env, info, args, 1);
-  napi_value _this = napi_get_cb_this(env, info);
-  Iterator* iterator = static_cast<Iterator*>(napi_unwrap(env, _this));
-
-  if (napi_get_type_of_value(env, args[0]) != napi_function) {
-    return napi_throw_error(env, "end() requires a callback argument");
+  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
+  napi_value _this;
+  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
+  void* unwrapped;
+  CHECK_NAPI_RESULT(napi_unwrap(env, _this, &unwrapped));
+  Iterator* iterator = static_cast<Iterator*>(unwrapped);
+  napi_valuetype t;
+  CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[0], &t));
+  if (t != napi_function) {
+      CHECK_NAPI_RESULT(napi_throw_error(env, "end() requires a callback argument"));
+      return;
   }
 
   if (!iterator->ended) {
@@ -311,8 +329,9 @@ NAPI_METHOD(Iterator::End) {
     }
   }
 
-  napi_value holder = napi_get_cb_holder(env, info);
-  napi_set_return_value(env, info, holder);
+  napi_value holder;
+  CHECK_NAPI_RESULT(napi_get_cb_holder(env, info, &holder));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, holder));
 }
 
 void Iterator::Init (napi_env env) {
@@ -322,9 +341,9 @@ void Iterator::Init (napi_env env) {
     { "end", Iterator::End },
   };
 
-  napi_value ctor = napi_create_constructor(env, "Iterator", Iterator::New, nullptr, 3, methods);
-
-  iterator_constructor = napi_create_persistent(env, ctor);
+  napi_value ctor;
+  CHECK_NAPI_RESULT(napi_create_constructor(env, "Iterator", Iterator::New, nullptr, 3, methods, &ctor));
+  CHECK_NAPI_RESULT(napi_create_persistent(env, ctor, &iterator_constructor));
 }
 
 napi_value Iterator::NewInstance (
@@ -337,14 +356,15 @@ napi_value Iterator::NewInstance (
   Napi::EscapableHandleScope scope(env);
 
   napi_value instance;
-  napi_value constructorHandle = napi_get_persistent_value(env, iterator_constructor);
+  napi_value constructorHandle;
+  CHECK_NAPI_RESULT(napi_get_persistent_value(env, iterator_constructor, &constructorHandle));
 
   if (optionsObj == nullptr) {
     napi_value argv[2] = { database, id };
-    instance = napi_new_instance(env, constructorHandle, 2, argv);
+    CHECK_NAPI_RESULT(napi_new_instance(env, constructorHandle, 2, argv, &instance));
   } else {
     napi_value argv[3] = { database, id, optionsObj };
-    instance = napi_new_instance(env, constructorHandle, 3, argv);
+    CHECK_NAPI_RESULT(napi_new_instance(env, constructorHandle, 3, argv, &instance));
   }
 
   return scope.Escape(instance);
@@ -352,10 +372,12 @@ napi_value Iterator::NewInstance (
 
 NAPI_METHOD(Iterator::New) {
   napi_value args[3];
-  napi_get_cb_args(env, info, args, 3);
-  int argsLength = napi_get_cb_args_length(env, info);
-
-  Database* database = static_cast<Database*>(napi_unwrap(env, args[0]));
+  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 3));
+  int argsLength;
+  CHECK_NAPI_RESULT(napi_get_cb_args_length(env, info, &argsLength));
+  void* unwrapped;
+  CHECK_NAPI_RESULT(napi_unwrap(env, args[0], &unwrapped));
+  Database* database = static_cast<Database*>(unwrapped);
 
   leveldb::Slice* start = NULL;
   std::string* end = NULL;
@@ -376,153 +398,203 @@ NAPI_METHOD(Iterator::New) {
   //default to forward.
   bool reverse = false;
 
-  if (argsLength > 1 && napi_get_type_of_value(env, args[2]) == napi_object) {
-    optionsObj = args[2];
+  if (argsLength > 1) {
+      napi_valuetype t;
+      CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[2], &t));
 
-    reverse = BooleanOptionValue(env, optionsObj, "reverse");
+      if (t == napi_object) {
+          optionsObj = args[2];
+          reverse = BooleanOptionValue(env, optionsObj, "reverse");
 
-    napi_propertyname pnStart = napi_property_name(env, "start");
-    napi_value valStart = nullptr;
-    if (napi_has_property(env, optionsObj, pnStart)
-        && (napi_buffer_has_instance(env, valStart = napi_get_property(env, optionsObj, pnStart))
-          || napi_get_type_of_value(env, valStart) == napi_string)) {
+          napi_propertyname pnStart;
+          CHECK_NAPI_RESULT(napi_property_name(env, "start", &pnStart));
+          napi_value valStart = nullptr;
+          bool r;
+          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnStart, &r));
 
-      napi_value startBuffer = valStart;
+          if (r) {
+              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnStart, &valStart));
+              CHECK_NAPI_RESULT(napi_buffer_has_instance(env, valStart, &r));
+              CHECK_NAPI_RESULT(napi_get_type_of_value(env, valStart, &t));
 
-      // ignore start if it has size 0 since a Slice can't have length 0
-      if (StringOrBufferLength(env, startBuffer) > 0) {
-        LD_STRING_OR_BUFFER_TO_COPY(_start, startBuffer, start)
-        start = new leveldb::Slice(_startCh_, _startSz_);
-        startStr = _startCh_;
-      }
-    }
+              if (r || t == napi_string) {
+                  napi_value startBuffer = valStart;
 
-    napi_propertyname pnEnd = napi_property_name(env, "end");
-    napi_value valEnd = nullptr;
-    if (napi_has_property(env, optionsObj, pnEnd)
-        && (napi_buffer_has_instance(env, valEnd = napi_get_property(env, optionsObj, pnEnd))
-          || napi_get_type_of_value(env, valEnd) == napi_string)) {
-
-      napi_value endBuffer = valEnd;
-
-      // ignore end if it has size 0 since a Slice can't have length 0
-      if (StringOrBufferLength(env, endBuffer) > 0) {
-        LD_STRING_OR_BUFFER_TO_COPY(_end, endBuffer, end)
-        end = new std::string(_endCh_, _endSz_);
-        delete[] _endCh_;
-      }
-    }
-
-    napi_propertyname pnLimit = napi_property_name(env, "limit");
-    if (optionsObj != nullptr && napi_has_property(env, optionsObj, pnLimit)) {
-      limit = napi_get_value_int64(env, napi_get_property(env, optionsObj, pnLimit));
-    }
-
-    napi_propertyname pnHighWaterMark = napi_property_name(env, "highWaterMark");
-    if (napi_has_property(env, optionsObj, pnHighWaterMark)) {
-      highWaterMark = napi_get_value_int64(env, napi_get_property(env, optionsObj, pnHighWaterMark));
-    }
-
-    napi_propertyname pnLt = napi_property_name(env, "lt");
-    napi_value valLt = nullptr;
-    if (napi_has_property(env, optionsObj, pnLt)
-        && (napi_buffer_has_instance(env, valLt = napi_get_property(env, optionsObj, pnLt))
-          || napi_get_type_of_value(env, valLt) == napi_string)) {
-
-      napi_value ltBuffer = valLt;
-
-      // ignore end if it has size 0 since a Slice can't have length 0
-      if (StringOrBufferLength(env, ltBuffer) > 0) {
-        LD_STRING_OR_BUFFER_TO_COPY(_lt, ltBuffer, lt)
-        lt = new std::string(_ltCh_, _ltSz_);
-        delete[] _ltCh_;
-        if (reverse) {
-          if (startStr != NULL) {
-            delete[] startStr;
-            startStr = NULL;
+                  // ignore start if it has size 0 since a Slice can't have length 0
+                  if (StringOrBufferLength(env, startBuffer) > 0) {
+                      LD_STRING_OR_BUFFER_TO_COPY(_start, startBuffer, start)
+                          start = new leveldb::Slice(_startCh_, _startSz_);
+                      startStr = _startCh_;
+                  }
+              }
           }
-          if (start != NULL)
-            delete start;
-          start = new leveldb::Slice(lt->data(), lt->size());
-        }
-      }
-    }
 
-    napi_propertyname pnLte = napi_property_name(env, "lte");
-    napi_value valLte = nullptr;
-    if (napi_has_property(env, optionsObj, pnLte)
-        && (napi_buffer_has_instance(env, valLte = napi_get_property(env, optionsObj, pnLte))
-          || napi_get_type_of_value(env, valLte) == napi_string)) {
+          napi_propertyname pnEnd;
+          CHECK_NAPI_RESULT(napi_property_name(env, "end", &pnEnd));
+          napi_value valEnd = nullptr;
+          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnEnd, &r));
 
-      napi_value lteBuffer = valLte;
+          if (r) {
+              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnEnd, &valEnd));
+              CHECK_NAPI_RESULT(napi_buffer_has_instance(env, valEnd, &r));
+              CHECK_NAPI_RESULT(napi_get_type_of_value(env, valEnd, &t));
 
-      // ignore end if it has size 0 since a Slice can't have length 0
-      if (StringOrBufferLength(env, lteBuffer) > 0) {
-        LD_STRING_OR_BUFFER_TO_COPY(_lte, lteBuffer, lte)
-        lte = new std::string(_lteCh_, _lteSz_);
-        delete[] _lteCh_;
-        if (reverse) {
-          if (startStr != NULL) {
-            delete[] startStr;
-            startStr = NULL;
+              if (r || t == napi_string) {
+                  napi_value endBuffer = valEnd;
+
+                  // ignore end if it has size 0 since a Slice can't have length 0
+                  if (StringOrBufferLength(env, endBuffer) > 0) {
+                      LD_STRING_OR_BUFFER_TO_COPY(_end, endBuffer, end)
+                          end = new std::string(_endCh_, _endSz_);
+                      delete[] _endCh_;
+                  }
+              }
           }
-          if (start != NULL)
-            delete start;
-          start = new leveldb::Slice(lte->data(), lte->size());
-        }
-      }
-    }
 
-    napi_propertyname pnGt = napi_property_name(env, "gt");
-    napi_value valGt = nullptr;
-    if (napi_has_property(env, optionsObj, pnGt)
-        && (napi_buffer_has_instance(env, valGt = napi_get_property(env, optionsObj, pnGt))
-          || napi_get_type_of_value(env, valGt) == napi_string)) {
+          int64_t i64;
+          napi_propertyname pnLimit;
+          CHECK_NAPI_RESULT(napi_property_name(env, "limit", &pnLimit));
+          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnLimit, &r));
 
-      napi_value gtBuffer = valGt;
-
-      // ignore end if it has size 0 since a Slice can't have length 0
-      if (StringOrBufferLength(env, gtBuffer) > 0) {
-        LD_STRING_OR_BUFFER_TO_COPY(_gt, gtBuffer, gt)
-        gt = new std::string(_gtCh_, _gtSz_);
-        delete[] _gtCh_;
-        if (!reverse) {
-          if (startStr != NULL) {
-            delete[] startStr;
-            startStr = NULL;
+          if (r) {
+              napi_value valLimit;
+              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnLimit, &valLimit));
+              CHECK_NAPI_RESULT(napi_get_value_int64(env, valLimit, &i64));
+              // TODO: is this truncated?
+              limit = i64;
           }
-          if (start != NULL)
-            delete start;
-          start = new leveldb::Slice(gt->data(), gt->size());
-        }
-      }
-    }
 
-    napi_propertyname pnGte = napi_property_name(env, "gte");
-    napi_value valGte = nullptr;
-    if (napi_has_property(env, optionsObj, pnGte)
-        && (napi_buffer_has_instance(env, valGte = napi_get_property(env, optionsObj, pnGte))
-          || napi_get_type_of_value(env, valGte) == napi_string)) {
-
-      napi_value gteBuffer = valGte;
-
-      // ignore end if it has size 0 since a Slice can't have length 0
-      if (StringOrBufferLength(env, gteBuffer) > 0) {
-        LD_STRING_OR_BUFFER_TO_COPY(_gte, gteBuffer, gte)
-        gte = new std::string(_gteCh_, _gteSz_);
-        delete[] _gteCh_;
-        if (!reverse) {
-          if (startStr != NULL) {
-            delete[] startStr;
-            startStr = NULL;
+          napi_propertyname pnHighWaterMark;
+          CHECK_NAPI_RESULT(napi_property_name(env, "highWaterMark", &pnHighWaterMark));
+          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnHighWaterMark, &r));
+          if (r) {
+              napi_value valHighWaterMark;
+              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnHighWaterMark, &valHighWaterMark));
+              CHECK_NAPI_RESULT(napi_get_value_int64(env, valHighWaterMark, &i64));
+              // TODO: is this truncated?
+              highWaterMark = i64;
           }
-          if (start != NULL)
-            delete start;
-          start = new leveldb::Slice(gte->data(), gte->size());
-        }
-      }
-    }
 
+          napi_propertyname pnLt;
+          CHECK_NAPI_RESULT(napi_property_name(env, "lt", &pnLt));
+          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnLt, &r));
+          if (r) {
+              napi_value valLt = nullptr;
+              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnLt, &valLt));
+              CHECK_NAPI_RESULT(napi_buffer_has_instance(env, valLt, &r));
+              CHECK_NAPI_RESULT(napi_get_type_of_value(env, valLt, &t));
+
+              if (r || t == napi_string) {
+                  napi_value ltBuffer = valLt;
+
+                  // ignore end if it has size 0 since a Slice can't have length 0
+                  if (StringOrBufferLength(env, ltBuffer) > 0) {
+                      LD_STRING_OR_BUFFER_TO_COPY(_lt, ltBuffer, lt)
+                          lt = new std::string(_ltCh_, _ltSz_);
+                      delete[] _ltCh_;
+                      if (reverse) {
+                          if (startStr != NULL) {
+                              delete[] startStr;
+                              startStr = NULL;
+                          }
+                          if (start != NULL)
+                              delete start;
+                          start = new leveldb::Slice(lt->data(), lt->size());
+                      }
+                  }
+              }
+          }
+
+          napi_propertyname pnLte;
+          CHECK_NAPI_RESULT(napi_property_name(env, "lte", &pnLte));
+          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnLte, &r));
+          if (r) {
+              napi_value valLte = nullptr;
+              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnLte, &valLte));
+              CHECK_NAPI_RESULT(napi_buffer_has_instance(env, valLte, &r));
+              CHECK_NAPI_RESULT(napi_get_type_of_value(env, valLte, &t));
+
+              if (r || t == napi_string) {
+                  napi_value lteBuffer = valLte;
+
+                  // ignore end if it has size 0 since a Slice can't have length 0
+                  if (StringOrBufferLength(env, lteBuffer) > 0) {
+                      LD_STRING_OR_BUFFER_TO_COPY(_lte, lteBuffer, lte)
+                          lte = new std::string(_lteCh_, _lteSz_);
+                      delete[] _lteCh_;
+                      if (reverse) {
+                          if (startStr != NULL) {
+                              delete[] startStr;
+                              startStr = NULL;
+                          }
+                          if (start != NULL)
+                              delete start;
+                          start = new leveldb::Slice(lte->data(), lte->size());
+                      }
+                  }
+              }
+          }
+
+          napi_propertyname pnGt;
+          CHECK_NAPI_RESULT(napi_property_name(env, "gt", &pnGt));
+          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnGt, &r));
+          if (r) {
+              napi_value valGt = nullptr;
+              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnGt, &valGt));
+              CHECK_NAPI_RESULT(napi_buffer_has_instance(env, valGt, &r));
+              CHECK_NAPI_RESULT(napi_get_type_of_value(env, valGt, &t));
+
+              if (r || t == napi_string) {
+                  napi_value gtBuffer = valGt;
+
+                  // ignore end if it has size 0 since a Slice can't have length 0
+                  if (StringOrBufferLength(env, gtBuffer) > 0) {
+                      LD_STRING_OR_BUFFER_TO_COPY(_gt, gtBuffer, gt)
+                          gt = new std::string(_gtCh_, _gtSz_);
+                      delete[] _gtCh_;
+                      if (!reverse) {
+                          if (startStr != NULL) {
+                              delete[] startStr;
+                              startStr = NULL;
+                          }
+                          if (start != NULL)
+                              delete start;
+                          start = new leveldb::Slice(gt->data(), gt->size());
+                      }
+                  }
+              }
+          }
+
+          napi_propertyname pnGte;
+          CHECK_NAPI_RESULT(napi_property_name(env, "gte", &pnGte));
+          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnGte, &r));
+          if (r) {
+              napi_value valGte = nullptr;
+              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnGte, &valGte));
+              CHECK_NAPI_RESULT(napi_buffer_has_instance(env, valGte, &r));
+              CHECK_NAPI_RESULT(napi_get_type_of_value(env, valGte, &t));
+
+              if (r || t == napi_string) {
+                  napi_value gteBuffer = valGte;
+
+                  // ignore end if it has size 0 since a Slice can't have length 0
+                  if (StringOrBufferLength(env, gteBuffer) > 0) {
+                      LD_STRING_OR_BUFFER_TO_COPY(_gte, gteBuffer, gte)
+                          gte = new std::string(_gteCh_, _gteSz_);
+                      delete[] _gteCh_;
+                      if (!reverse) {
+                          if (startStr != NULL) {
+                              delete[] startStr;
+                              startStr = NULL;
+                          }
+                          if (start != NULL)
+                              delete start;
+                          start = new leveldb::Slice(gte->data(), gte->size());
+                      }
+                  }
+              }
+          }
+      }
   }
 
   bool keys = BooleanOptionValue(env, optionsObj, "keys", true);
@@ -530,10 +602,12 @@ NAPI_METHOD(Iterator::New) {
   bool keyAsBuffer = BooleanOptionValue(env, optionsObj, "keyAsBuffer", true);
   bool valueAsBuffer = BooleanOptionValue(env, optionsObj, "valueAsBuffer", true);
   bool fillCache = BooleanOptionValue(env, optionsObj, "fillCache");
+  int32_t intId;
+  CHECK_NAPI_RESULT(napi_get_value_int32(env, id, &intId));
 
   Iterator* iterator = new Iterator(
       database
-    , (uint32_t)napi_get_value_int32(env, id)
+    , intId
     , start
     , end
     , reverse
@@ -549,13 +623,13 @@ NAPI_METHOD(Iterator::New) {
     , valueAsBuffer
     , highWaterMark
   );
-  napi_value _this = napi_get_cb_this(env, info);
 
-  napi_value externalObj = napi_make_external(env, _this);
-
-  napi_wrap(env, externalObj, iterator, Iterator::Destructor, &iterator->handle);
-
-  napi_set_return_value(env, info, externalObj);
+  napi_value _this;
+  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
+  napi_value externalObj;
+  CHECK_NAPI_RESULT(napi_make_external(env, _this, &externalObj));
+  CHECK_NAPI_RESULT(napi_wrap(env, externalObj, iterator, Iterator::Destructor, &iterator->handle));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, externalObj));
 }
 
 void Iterator::Destructor(void* obj) {

@@ -129,11 +129,11 @@ void Database::CloseDatabase () {
 
 void LevelDOWN (napi_env env, napi_callback_info info) {
   napi_value args[1];
-  napi_get_cb_args(env, info, args, 1);
+  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
 
   napi_value location = args[0];
 
-  napi_set_return_value(env, info, Database::NewInstance(env, location));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, Database::NewInstance(env, location)));
 }
 
 void Database::Init (napi_env env) {
@@ -149,9 +149,9 @@ void Database::Init (napi_env env) {
     { "iterator", Database::Iterator },
   };
 
-  napi_value ctor = napi_create_constructor(env, "Database", Database::New, nullptr, 9, methods);
-
-  database_constructor = napi_create_persistent(env, ctor);
+  napi_value ctor;
+  CHECK_NAPI_RESULT(napi_create_constructor(env, "Database", Database::New, nullptr, 9, methods, &ctor));
+  CHECK_NAPI_RESULT(napi_create_persistent(env, ctor, &database_constructor));
 }
 
 void Database::Destructor (void* obj) {
@@ -161,27 +161,27 @@ void Database::Destructor (void* obj) {
 
 NAPI_METHOD(Database::New) {
   napi_value args[1];
-  napi_get_cb_args(env, info, args, 1);
-  napi_value _this = napi_get_cb_this(env, info);
+  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
+  napi_value _this;
+  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
 
   Database* obj = new Database(args[0]);
 
-  napi_value externalObj = napi_make_external(env, _this);
-
-  napi_wrap(env, externalObj, obj, Database::Destructor, nullptr);
-
-  napi_set_return_value(env, info, externalObj);
+  napi_value externalObj;
+  CHECK_NAPI_RESULT(napi_make_external(env, _this, &externalObj));
+  CHECK_NAPI_RESULT(napi_wrap(env, externalObj, obj, Database::Destructor, nullptr));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, externalObj));
 }
 
 napi_value Database::NewInstance (napi_env env, napi_value location) {
   Napi::EscapableHandleScope scope(env);
 
-  napi_value instance;
-
-  napi_value constructorHandle = napi_get_persistent_value(env, database_constructor);
+  napi_value constructorHandle;
+  CHECK_NAPI_RESULT(napi_get_persistent_value(env, database_constructor, &constructorHandle));
 
   napi_value argv[] = { location };
-  instance = napi_new_instance(env, constructorHandle, 1, argv);
+  napi_value instance;
+  CHECK_NAPI_RESULT(napi_new_instance(env, constructorHandle, 1, argv, &instance));
 
   return scope.Escape(instance);
 }
@@ -265,20 +265,27 @@ NAPI_METHOD(Database::Close) {
         leveldown::Iterator *iterator = it->second;
 
         napi_value iteratorHandle;
-        if (napi_get_weakref_value(env, iterator->handle, &iteratorHandle)) {
+        CHECK_NAPI_RESULT(napi_get_weakref_value(env, iterator->handle, &iteratorHandle));
+        if (iteratorHandle != nullptr) {
           if (!iterator->ended) {
-            napi_propertyname pnEnd = napi_property_name(env, "end");
-            napi_value end = napi_get_property(env, iteratorHandle, pnEnd);
+            napi_propertyname pnEnd;
+            CHECK_NAPI_RESULT(napi_property_name(env, "end", &pnEnd));
+            napi_value end;
+            CHECK_NAPI_RESULT(napi_get_property(env, iteratorHandle, pnEnd, &end));
+            napi_value emptyFn;
+            CHECK_NAPI_RESULT(napi_create_function(env, EmptyMethod, nullptr, &emptyFn));
             napi_value argv [] = {
-                napi_create_function(env, EmptyMethod, nullptr) // empty callback
+                emptyFn // empty callback
             };
-            napi_make_callback(
+            napi_value unused;
+            CHECK_NAPI_RESULT(napi_make_callback(
               env
               , iteratorHandle
               , end
               , 1
               , argv
-            );
+              , &unused
+            ));
           }
         }
         else {
@@ -360,16 +367,26 @@ NAPI_METHOD(Database::Delete) {
 NAPI_METHOD(Database::Batch) {
   {
     napi_value args[1];
-    napi_get_cb_args(env, info, args, 1);
-    int argsLength = napi_get_cb_args_length(env, info);
-    if ((argsLength == 0 || argsLength == 1) && !napi_is_array(env, args[0])) {
-      napi_value optionsObj = nullptr;
-      if (argsLength > 0 && napi_get_type_of_value(env, optionsObj) == napi_object) {
-        optionsObj = args[0];
+    CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
+    int argsLength;
+    CHECK_NAPI_RESULT(napi_get_cb_args_length(env, info, &argsLength));
+    if (argsLength == 0 || argsLength == 1) {
+      bool isArray;
+      CHECK_NAPI_RESULT(napi_is_array(env, args[0], &isArray));
+      if (!isArray) {
+        napi_value optionsObj = nullptr;
+        if (argsLength > 0) {
+          napi_valuetype t;
+          CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[0], &t));
+          if (t == napi_object) {
+            optionsObj = args[0];
+          }
+        }
+        napi_value _this;
+        CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
+        CHECK_NAPI_RESULT(napi_set_return_value(env, info, Batch::NewInstance(env, _this, optionsObj)));
+        return;
       }
-      napi_value _this = napi_get_cb_this(env, info);
-      napi_set_return_value(env, info, Batch::NewInstance(env, _this, optionsObj));
-      return;
     }
   }
 
@@ -382,17 +399,32 @@ NAPI_METHOD(Database::Batch) {
   leveldb::WriteBatch* batch = new leveldb::WriteBatch();
   bool hasData = false;
 
-  uint32_t length = napi_get_array_length(env, array);
-  for (unsigned int i = 0; i < length; i++) {
-    napi_value obj = napi_get_element(env, array, i);
+  uint32_t length;
+  CHECK_NAPI_RESULT(napi_get_array_length(env, array, &length));
 
-    if (napi_get_type_of_value(env, obj) != napi_object)
+  for (unsigned int i = 0; i < length; i++) {
+    napi_value obj;
+    CHECK_NAPI_RESULT(napi_get_element(env, array, i, &obj));
+
+    napi_valuetype t;
+    CHECK_NAPI_RESULT(napi_get_type_of_value(env, obj, &t));
+    if (t != napi_object)
       continue;
 
-    napi_value keyBuffer = napi_get_property(env, obj, napi_property_name(env, "key"));
-    napi_value type = napi_get_property(env, obj, napi_property_name(env, "type"));
+    napi_propertyname keyName;
+    CHECK_NAPI_RESULT(napi_property_name(env, "key", &keyName));
+    napi_value keyBuffer;
+    CHECK_NAPI_RESULT(napi_get_property(env, obj, keyName, &keyBuffer));
+    napi_propertyname typeName;
+    CHECK_NAPI_RESULT(napi_property_name(env, "type", &typeName));
+    napi_value type;
+    CHECK_NAPI_RESULT(napi_get_property(env, obj, typeName, &type));
+    napi_value delStr;
+    CHECK_NAPI_RESULT(napi_create_string(env, "del", &delStr));
+    bool r;
+    CHECK_NAPI_RESULT(napi_strict_equals(env, type, delStr, &r));
 
-    if (napi_strict_equals(env, type, napi_create_string(env, "del"))) {
+    if (r) {
       LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
 
       batch->Delete(key);
@@ -400,17 +432,26 @@ NAPI_METHOD(Database::Batch) {
         hasData = true;
 
       DisposeStringOrBufferFromSlice(env, keyBuffer, key);
-    } else if (napi_strict_equals(env, type, napi_create_string(env, "put"))) {
-      napi_value valueBuffer = napi_get_property(env, obj, napi_property_name(env, "value"));
+    } else {
+      napi_value putStr;
+      CHECK_NAPI_RESULT(napi_create_string(env, "put", &putStr));
+      CHECK_NAPI_RESULT(napi_strict_equals(env, type, putStr, &r));
 
-      LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
-      LD_STRING_OR_BUFFER_TO_SLICE(value, valueBuffer, value)
-      batch->Put(key, value);
-      if (!hasData)
-        hasData = true;
+      if (r) {
+        napi_propertyname valueName;
+        CHECK_NAPI_RESULT(napi_property_name(env, "value", &valueName));
+        napi_value valueBuffer;
+        CHECK_NAPI_RESULT(napi_get_property(env, obj, valueName, &valueBuffer));
 
-      DisposeStringOrBufferFromSlice(env, keyBuffer, key);
-      DisposeStringOrBufferFromSlice(env, valueBuffer, value);
+        LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
+        LD_STRING_OR_BUFFER_TO_SLICE(value, valueBuffer, value)
+        batch->Put(key, value);
+        if (!hasData)
+          hasData = true;
+
+        DisposeStringOrBufferFromSlice(env, keyBuffer, key);
+        DisposeStringOrBufferFromSlice(env, valueBuffer, value);
+      }
     }
   }
 
@@ -454,37 +495,51 @@ NAPI_METHOD(Database::ApproximateSize) {
 
 NAPI_METHOD(Database::GetProperty) {
   napi_value args[1];
-  napi_get_cb_args(env, info, args, 1);
-  napi_value _this = napi_get_cb_this(env, info);
+  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
+  napi_value _this;
+  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
 
   napi_value propertyHandle = args[0];
 
   LD_STRING_OR_BUFFER_TO_SLICE(property, propertyHandle, property)
 
-  
+  void* unwrapped;
+  CHECK_NAPI_RESULT(napi_unwrap(env, _this, &unwrapped));
   leveldown::Database* database =
-      static_cast<leveldown::Database*>(napi_unwrap(env, _this));
+      static_cast<leveldown::Database*>(unwrapped);
 
   std::string* value = new std::string();
   database->GetPropertyFromDatabase(property, value);
-  napi_value returnValue = napi_create_string_with_length(env, value->c_str(), value->length());
+  napi_value returnValue;
+  CHECK_NAPI_RESULT(napi_create_string_with_length(env, value->c_str(), value->length(), &returnValue));
+
   delete value;
   delete[] property.data();
 
-  napi_set_return_value(env, info, returnValue);
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, returnValue));
 }
 
 NAPI_METHOD(Database::Iterator) {
   napi_value args[1];
-  napi_get_cb_args(env, info, args, 1);
-  int argsLength = napi_get_cb_args_length(env, info);
-  napi_value _this = napi_get_cb_this(env, info);
+  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
+  int argsLength;
+  CHECK_NAPI_RESULT(napi_get_cb_args_length(env, info, &argsLength));
+  napi_value _this;
+  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
 
-  Database* database = static_cast<leveldown::Database*>(napi_unwrap(env, _this));
+  void* unwrapped;
+  CHECK_NAPI_RESULT(napi_unwrap(env, _this, &unwrapped));
+  leveldown::Database* database =
+      static_cast<leveldown::Database*>(unwrapped);
 
   napi_value optionsObj = nullptr;
-  if (argsLength > 0 && napi_get_type_of_value(env, args[0]) == napi_object) {
-    optionsObj = args[0];
+  if (argsLength > 0) {
+    napi_valuetype t;
+    CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[0], &t));
+
+    if (t == napi_object) {
+      optionsObj = args[0];
+    }
   }
 
   // each iterator gets a unique id for this Database, so we can
@@ -492,27 +547,28 @@ NAPI_METHOD(Database::Iterator) {
   uint32_t id = database->currentIteratorId++;
 
   napi_value iteratorHandle;
+  napi_value idVal;
+  CHECK_NAPI_RESULT(napi_create_number(env, id, &idVal));
 
   iteratorHandle = Iterator::NewInstance(
     env
     , _this
-    , napi_create_number(env, id)
+    , idVal
     , optionsObj
   );
 
-  if (napi_is_exception_pending(env)) {
+  bool r;
+  CHECK_NAPI_RESULT(napi_is_exception_pending(env, &r));
+  if (r) {
     // NB: node::FatalException can segfault here if there is no room on stack.
-    napi_throw_error(env, "Fatal Error in Database::Iterator!");
+    CHECK_NAPI_RESULT(napi_throw_error(env, "Fatal Error in Database::Iterator!"));
   }
 
-
-  leveldown::Iterator *iterator =
-      static_cast<leveldown::Iterator*>(napi_unwrap(env, iteratorHandle));
+  CHECK_NAPI_RESULT(napi_unwrap(env, iteratorHandle, &unwrapped));
+  leveldown::Iterator *iterator = static_cast<leveldown::Iterator*>(unwrapped);
 
   database->iterators[id] = iterator;
 
-  napi_set_return_value(env, info, iteratorHandle);
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, iteratorHandle));
 }
-
-
 } // namespace leveldown

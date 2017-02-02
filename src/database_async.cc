@@ -95,7 +95,9 @@ IOWorker::~IOWorker () {}
 void IOWorker::WorkComplete () {
   Napi::HandleScope scope;
 
-  DisposeStringOrBufferFromSlice(napi_get_current_env(), GetFromPersistent("key"), key);
+  napi_env env;
+  CHECK_NAPI_RESULT(napi_get_current_env(&env));
+  DisposeStringOrBufferFromSlice(env, GetFromPersistent("key"), key);
   AsyncWorker::WorkComplete();
 }
 
@@ -128,19 +130,25 @@ void ReadWorker::Execute () {
 
 void ReadWorker::HandleOKCallback () {
   Napi::HandleScope scope;
-  napi_env env = napi_get_current_env();
+  napi_env env;
+
+  CHECK_NAPI_RESULT(napi_get_current_env(&env));
 
   napi_value returnValue;
   if (asBuffer) {
     //TODO: could use NewBuffer if we carefully manage the lifecycle of `value`
     //and avoid an an extra allocation. We'd have to clean up properly when not OK
     //and let the new Buffer manage the data when OK
-    returnValue = napi_buffer_copy(env, value.data(), value.size());
+    CHECK_NAPI_RESULT(napi_buffer_copy(env, value.data(), value.size(), &returnValue));
   } else {
-    returnValue = napi_create_string_with_length(env, (char*)value.data(), value.size());
+    CHECK_NAPI_RESULT(napi_create_string_with_length(env, (char*)value.data(), value.size(), &returnValue));
   }
+
+  napi_value nullVal;
+  CHECK_NAPI_RESULT(napi_get_null(env, &nullVal));
+
   napi_value argv[] = {
-      napi_get_null(env)
+      nullVal
     , returnValue
   };
   callback->Call(2, argv);
@@ -198,7 +206,9 @@ void WriteWorker::Execute () {
 void WriteWorker::WorkComplete () {
   Napi::HandleScope scope;
 
-  DisposeStringOrBufferFromSlice(napi_get_current_env(), GetFromPersistent("value"), value);
+  napi_env env;
+  CHECK_NAPI_RESULT(napi_get_current_env(&env));
+  DisposeStringOrBufferFromSlice(env, GetFromPersistent("value"), value);
   IOWorker::WorkComplete();
 }
 
@@ -251,19 +261,27 @@ void ApproximateSizeWorker::Execute () {
 
 void ApproximateSizeWorker::WorkComplete() {
   Napi::HandleScope scope;
+  napi_env env;
+  CHECK_NAPI_RESULT(napi_get_current_env(&env));
 
-  DisposeStringOrBufferFromSlice(napi_get_current_env(), GetFromPersistent("start"), range.start);
-  DisposeStringOrBufferFromSlice(napi_get_current_env(), GetFromPersistent("end"), range.limit);
+  DisposeStringOrBufferFromSlice(env, GetFromPersistent("start"), range.start);
+  DisposeStringOrBufferFromSlice(env, GetFromPersistent("end"), range.limit);
   AsyncWorker::WorkComplete();
 }
 
 void ApproximateSizeWorker::HandleOKCallback () {
   Napi::HandleScope scope;
-  napi_env env = napi_get_current_env();
+  napi_env env;
+  CHECK_NAPI_RESULT(napi_get_current_env(&env));
 
-  napi_value returnValue = napi_create_number(env, (double) size);
+  napi_value returnValue;
+  CHECK_NAPI_RESULT(napi_create_number(env, (double)size, &returnValue));
+
+  napi_value nullVal;
+  CHECK_NAPI_RESULT(napi_get_null(env, &nullVal));
+
   napi_value argv[] = {
-      napi_get_null(env)
+      nullVal
     , returnValue
   };
   callback->Call(2, argv);
