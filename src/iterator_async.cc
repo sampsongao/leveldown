@@ -50,17 +50,17 @@ void NextWorker::HandleOKCallback () {
     napi_value returnKey;
     if (iterator->keyAsBuffer) {
       //TODO: use NewBuffer, see database_async.cc
-      CHECK_NAPI_RESULT(napi_buffer_copy(env, key.data(), key.size(), &returnKey));
+      CHECK_NAPI_RESULT(napi_create_buffer_copy(env, key.data(), key.size(), &returnKey));
     } else {
-      CHECK_NAPI_RESULT(napi_create_string_with_length(env, (char*)key.data(), key.size(), &returnKey));
+      CHECK_NAPI_RESULT(napi_create_string_utf8(env, (char*)key.data(), key.size(), &returnKey));
     }
 
     napi_value returnValue;
     if (iterator->valueAsBuffer) {
       //TODO: use NewBuffer, see database_async.cc
-      CHECK_NAPI_RESULT(napi_buffer_copy(env, value.data(), value.size(), &returnValue));
+      CHECK_NAPI_RESULT(napi_create_buffer_copy(env, value.data(), value.size(), &returnValue));
     } else {
-      CHECK_NAPI_RESULT(napi_create_string_with_length(env, (char*)value.data(), value.size(), &returnValue));
+      CHECK_NAPI_RESULT(napi_create_string_utf8(env, (char*)value.data(), value.size(), &returnValue));
     }
 
     // put the key & value in a descending order, so that they can be .pop:ed in javascript-land

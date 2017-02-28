@@ -15,15 +15,15 @@
 static inline size_t StringOrBufferLength(napi_env env, napi_value obj) {
   Napi::HandleScope scope;
   bool result;
-  CHECK_NAPI_RESULT(napi_buffer_has_instance(env, obj, &result));
+  CHECK_NAPI_RESULT(napi_is_buffer(env, obj, &result));
 
   size_t sz;
   if (result) {
-    CHECK_NAPI_RESULT(napi_buffer_length(env, obj, &sz));
+    CHECK_NAPI_RESULT(napi_get_buffer_info(env, obj, nullptr, &sz));
   }
   else {
     int result;
-    CHECK_NAPI_RESULT(napi_get_string_utf8_length(env, obj, &result));
+    CHECK_NAPI_RESULT(napi_get_value_string_utf8_length(env, obj, &result));
     sz = result;
   }
 
@@ -36,7 +36,7 @@ static inline void DisposeStringOrBufferFromSlice(
       , leveldb::Slice slice) {
 
   bool result;
-  CHECK_NAPI_RESULT(napi_buffer_has_instance(env, handle, &result));
+  CHECK_NAPI_RESULT(napi_is_buffer(env, handle, &result));
 
   if (!slice.empty() && !result)
     delete[] slice.data();
@@ -61,20 +61,21 @@ static inline void DisposeStringOrBufferFromSlice(
       CHECK_NAPI_RESULT(napi_coerce_to_object(env, from, &(from ## Object_)));              \
       bool result = false;                                                                  \
       if (from ## Object_ != nullptr) {                                                     \
-        CHECK_NAPI_RESULT(napi_buffer_has_instance(env, from ## Object_, &result));         \
+        CHECK_NAPI_RESULT(napi_is_buffer(env, from ## Object_, &result));                   \
       }                                                                                     \
       if (result) {                                                                         \
-        CHECK_NAPI_RESULT(napi_buffer_length(env, from ## Object_, &(to ## Sz_)));          \
-        CHECK_NAPI_RESULT(napi_buffer_data(env, from ## Object_, &(to ##Ch_)));             \
+        CHECK_NAPI_RESULT(napi_get_buffer_info(                                             \
+          env, from ## Object_, &(to ##Ch_), &(to ## Sz_)));                                \
       } else {                                                                              \
         napi_value to ## Str_;                                                              \
         CHECK_NAPI_RESULT(napi_coerce_to_string(env, from, &(to ## Str_)));                 \
         int sz;                                                                             \
-        CHECK_NAPI_RESULT(napi_get_string_utf8_length(env, to ## Str_, &sz));               \
+        CHECK_NAPI_RESULT(napi_get_value_string_utf8_length(env, to ## Str_, &sz));         \
         to ## Sz_ = sz;                                                                     \
         to ## Ch_ = new char[to ## Sz_];                                                    \
         int unused;                                                                         \
-        CHECK_NAPI_RESULT(napi_get_string_utf8(env, to ## Str_, to ## Ch_, -1, &unused));   \
+        CHECK_NAPI_RESULT(                                                                  \
+          napi_get_value_string_utf8(env, to ## Str_, to ## Ch_, sz, &unused));             \
       }                                                                                     \
     }                                                                                       \
   }                                                                                         \
@@ -88,25 +89,27 @@ static inline void DisposeStringOrBufferFromSlice(
     CHECK_NAPI_RESULT(napi_coerce_to_object(env, from, &(from ## Object_)));   \
     bool r = false;                                                            \
     if (from ## Object_ != nullptr) {                                          \
-      CHECK_NAPI_RESULT(napi_buffer_has_instance(env, from ## Object_, &r));   \
+      CHECK_NAPI_RESULT(napi_is_buffer(env, from ## Object_, &r));             \
     }                                                                          \
     if (r) {                                                                   \
-      CHECK_NAPI_RESULT(                                                       \
-        napi_buffer_length(env, from ## Object_, &(to ## Sz_)));               \
+      CHECK_NAPI_RESULT(napi_get_buffer_info(                                  \
+        env, from ## Object_, nullptr, &(to ## Sz_)));                         \
       to ## Ch_ = new char[to ## Sz_];                                         \
-      char* buf;                                                               \
-      CHECK_NAPI_RESULT(napi_buffer_data(env, from ## Object_, &buf));         \
+      char* buf = nullptr;                                                     \
+      CHECK_NAPI_RESULT(napi_get_buffer_info(                                  \
+        env, from ## Object_, &buf, nullptr));                                 \
       memcpy(to ## Ch_, buf, to ## Sz_);                                       \
     } else {                                                                   \
       napi_value to ## Str_;                                                   \
       CHECK_NAPI_RESULT(napi_coerce_to_string(env, from, &(to ## Str_)));      \
       int sz;                                                                  \
-      CHECK_NAPI_RESULT(napi_get_string_utf8_length(env, to ## Str_, &sz));    \
+      CHECK_NAPI_RESULT(napi_get_value_string_utf8_length(                     \
+        env, to ## Str_, &sz));                                                \
       to ## Sz_ = sz;                                                          \
       to ## Ch_ = new char[to ## Sz_];                                         \
       int unused;                                                              \
       CHECK_NAPI_RESULT(                                                       \
-        napi_get_string_utf8(env, to ## Str_, to ## Ch_, -1, &unused));        \
+        napi_get_value_string_utf8(env, to ## Str_, to ## Ch_, sz, &unused));  \
     }                                                                          \
   }
 

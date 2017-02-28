@@ -13,7 +13,7 @@
 
 namespace leveldown {
 
-static napi_persistent iterator_constructor;
+static napi_ref iterator_constructor;
 
 Iterator::Iterator (
     Database* database
@@ -47,6 +47,7 @@ Iterator::Iterator (
   , highWaterMark(highWaterMark)
   , keyAsBuffer(keyAsBuffer)
   , valueAsBuffer(valueAsBuffer)
+  , handle(nullptr)
 {
   Napi::HandleScope scope;
 
@@ -86,9 +87,9 @@ Iterator::~Iterator () {
   if (gte != NULL)
     delete gte;
   
-  napi_env env;
-  CHECK_NAPI_RESULT(napi_get_current_env(&env));
-  CHECK_NAPI_RESULT(napi_release_weakref(env, handle));
+  //napi_env env;
+  //CHECK_NAPI_RESULT(napi_get_current_env(&env));
+  //CHECK_NAPI_RESULT(napi_reference_release(env, handle, nullptr));
 };
 
 bool Iterator::GetIterator () {
@@ -342,8 +343,8 @@ void Iterator::Init (napi_env env) {
   };
 
   napi_value ctor;
-  CHECK_NAPI_RESULT(napi_create_constructor(env, "Iterator", Iterator::New, nullptr, 3, methods, &ctor));
-  CHECK_NAPI_RESULT(napi_create_persistent(env, ctor, &iterator_constructor));
+  CHECK_NAPI_RESULT(napi_define_class(env, "Iterator", Iterator::New, nullptr, 3, methods, &ctor));
+  CHECK_NAPI_RESULT(napi_create_reference(env, ctor, 1, &iterator_constructor));
 }
 
 napi_value Iterator::NewInstance (
@@ -357,7 +358,7 @@ napi_value Iterator::NewInstance (
 
   napi_value instance;
   napi_value constructorHandle;
-  CHECK_NAPI_RESULT(napi_get_persistent_value(env, iterator_constructor, &constructorHandle));
+  CHECK_NAPI_RESULT(napi_get_reference_value(env, iterator_constructor, &constructorHandle));
 
   if (optionsObj == nullptr) {
     napi_value argv[2] = { database, id };
@@ -414,7 +415,7 @@ NAPI_METHOD(Iterator::New) {
 
           if (r) {
               CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnStart, &valStart));
-              CHECK_NAPI_RESULT(napi_buffer_has_instance(env, valStart, &r));
+              CHECK_NAPI_RESULT(napi_is_buffer(env, valStart, &r));
               CHECK_NAPI_RESULT(napi_get_type_of_value(env, valStart, &t));
 
               if (r || t == napi_string) {
@@ -436,7 +437,7 @@ NAPI_METHOD(Iterator::New) {
 
           if (r) {
               CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnEnd, &valEnd));
-              CHECK_NAPI_RESULT(napi_buffer_has_instance(env, valEnd, &r));
+              CHECK_NAPI_RESULT(napi_is_buffer(env, valEnd, &r));
               CHECK_NAPI_RESULT(napi_get_type_of_value(env, valEnd, &t));
 
               if (r || t == napi_string) {
@@ -481,7 +482,7 @@ NAPI_METHOD(Iterator::New) {
           if (r) {
               napi_value valLt = nullptr;
               CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnLt, &valLt));
-              CHECK_NAPI_RESULT(napi_buffer_has_instance(env, valLt, &r));
+              CHECK_NAPI_RESULT(napi_is_buffer(env, valLt, &r));
               CHECK_NAPI_RESULT(napi_get_type_of_value(env, valLt, &t));
 
               if (r || t == napi_string) {
@@ -511,7 +512,7 @@ NAPI_METHOD(Iterator::New) {
           if (r) {
               napi_value valLte = nullptr;
               CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnLte, &valLte));
-              CHECK_NAPI_RESULT(napi_buffer_has_instance(env, valLte, &r));
+              CHECK_NAPI_RESULT(napi_is_buffer(env, valLte, &r));
               CHECK_NAPI_RESULT(napi_get_type_of_value(env, valLte, &t));
 
               if (r || t == napi_string) {
@@ -541,7 +542,7 @@ NAPI_METHOD(Iterator::New) {
           if (r) {
               napi_value valGt = nullptr;
               CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnGt, &valGt));
-              CHECK_NAPI_RESULT(napi_buffer_has_instance(env, valGt, &r));
+              CHECK_NAPI_RESULT(napi_is_buffer(env, valGt, &r));
               CHECK_NAPI_RESULT(napi_get_type_of_value(env, valGt, &t));
 
               if (r || t == napi_string) {
@@ -571,7 +572,7 @@ NAPI_METHOD(Iterator::New) {
           if (r) {
               napi_value valGte = nullptr;
               CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnGte, &valGte));
-              CHECK_NAPI_RESULT(napi_buffer_has_instance(env, valGte, &r));
+              CHECK_NAPI_RESULT(napi_is_buffer(env, valGte, &r));
               CHECK_NAPI_RESULT(napi_get_type_of_value(env, valGte, &t));
 
               if (r || t == napi_string) {
@@ -626,10 +627,9 @@ NAPI_METHOD(Iterator::New) {
 
   napi_value _this;
   CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
-  napi_value externalObj;
-  CHECK_NAPI_RESULT(napi_make_external(env, _this, &externalObj));
-  CHECK_NAPI_RESULT(napi_wrap(env, externalObj, iterator, Iterator::Destructor, &iterator->handle));
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, externalObj));
+
+  CHECK_NAPI_RESULT(napi_wrap(env, _this, iterator, Iterator::Destructor, &iterator->handle));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
 }
 
 void Iterator::Destructor(void* obj) {

@@ -8,7 +8,7 @@
 
 namespace leveldown {
 
-static napi_persistent batch_constructor;
+static napi_ref batch_constructor;
 
 Batch::Batch (leveldown::Database* database, bool sync) : database(database) {
   options = new leveldb::WriteOptions();
@@ -40,8 +40,8 @@ void Batch::Init (napi_env env) {
   };
 
   napi_value ctor;
-  CHECK_NAPI_RESULT(napi_create_constructor(env, "Batch", Batch::New, nullptr, 4, methods, &ctor));
-  CHECK_NAPI_RESULT(napi_create_persistent(env, ctor, &batch_constructor));
+  CHECK_NAPI_RESULT(napi_define_class(env, "Batch", Batch::New, nullptr, 4, methods, &ctor));
+  CHECK_NAPI_RESULT(napi_create_reference(env, ctor, 1, &batch_constructor));
 }
 
 NAPI_METHOD(Batch::New) {
@@ -69,10 +69,8 @@ NAPI_METHOD(Batch::New) {
 
   Batch* batch = new Batch(database, sync);
 
-  napi_value externalObj;
-  CHECK_NAPI_RESULT(napi_make_external(env, _this, &externalObj));
-  CHECK_NAPI_RESULT(napi_wrap(env, externalObj, batch, Batch::Destructor, nullptr));
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, externalObj));
+  CHECK_NAPI_RESULT(napi_wrap(env, _this, batch, Batch::Destructor, nullptr));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
 }
 
 napi_value Batch::NewInstance (
@@ -86,7 +84,7 @@ napi_value Batch::NewInstance (
   napi_value instance;
 
   napi_value constructorHandle;
-  CHECK_NAPI_RESULT(napi_get_persistent_value(env, batch_constructor, &constructorHandle));
+  CHECK_NAPI_RESULT(napi_get_reference_value(env, batch_constructor, &constructorHandle));
 
   if (optionsObj == nullptr) {
     napi_value argv[1] = { database };

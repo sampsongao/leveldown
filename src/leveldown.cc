@@ -16,7 +16,7 @@ namespace leveldown {
 
 void DestroyDB (napi_env env, napi_callback_info info) {
   napi_value args[2];
-  napi_get_cb_args(env, info, args, 2);
+  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 2));
 
   Napi::Utf8String* location = new Napi::Utf8String(args[0]);
 
@@ -36,7 +36,7 @@ void DestroyDB (napi_env env, napi_callback_info info) {
 
 void RepairDB (napi_env env, napi_callback_info info) {
   napi_value args[2];
-  napi_get_cb_args(env, info, args, 2);
+  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 2));
 
   Napi::Utf8String* location = new Napi::Utf8String(args[0]);
 

@@ -139,9 +139,9 @@ void ReadWorker::HandleOKCallback () {
     //TODO: could use NewBuffer if we carefully manage the lifecycle of `value`
     //and avoid an an extra allocation. We'd have to clean up properly when not OK
     //and let the new Buffer manage the data when OK
-    CHECK_NAPI_RESULT(napi_buffer_copy(env, value.data(), value.size(), &returnValue));
+    CHECK_NAPI_RESULT(napi_create_buffer_copy(env, value.data(), value.size(), &returnValue));
   } else {
-    CHECK_NAPI_RESULT(napi_create_string_with_length(env, (char*)value.data(), value.size(), &returnValue));
+    CHECK_NAPI_RESULT(napi_create_string_utf8(env, (char*)value.data(), value.size(), &returnValue));
   }
 
   napi_value nullVal;

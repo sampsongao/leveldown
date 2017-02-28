@@ -20,7 +20,7 @@
 
 namespace leveldown {
 
-static napi_persistent database_constructor;
+static napi_ref database_constructor;
 
 Database::Database (napi_value from)
   : location(new Napi::Utf8String(from))
@@ -150,8 +150,8 @@ void Database::Init (napi_env env) {
   };
 
   napi_value ctor;
-  CHECK_NAPI_RESULT(napi_create_constructor(env, "Database", Database::New, nullptr, 9, methods, &ctor));
-  CHECK_NAPI_RESULT(napi_create_persistent(env, ctor, &database_constructor));
+  CHECK_NAPI_RESULT(napi_define_class(env, "Database", Database::New, nullptr, 9, methods, &ctor));
+  CHECK_NAPI_RESULT(napi_create_reference(env, ctor, 1, &database_constructor));
 }
 
 void Database::Destructor (void* obj) {
@@ -166,18 +166,16 @@ NAPI_METHOD(Database::New) {
   CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
 
   Database* obj = new Database(args[0]);
-
-  napi_value externalObj;
-  CHECK_NAPI_RESULT(napi_make_external(env, _this, &externalObj));
-  CHECK_NAPI_RESULT(napi_wrap(env, externalObj, obj, Database::Destructor, nullptr));
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, externalObj));
+  
+  CHECK_NAPI_RESULT(napi_wrap(env, _this, obj, Database::Destructor, nullptr));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
 }
 
 napi_value Database::NewInstance (napi_env env, napi_value location) {
   Napi::EscapableHandleScope scope(env);
 
   napi_value constructorHandle;
-  CHECK_NAPI_RESULT(napi_get_persistent_value(env, database_constructor, &constructorHandle));
+  CHECK_NAPI_RESULT(napi_get_reference_value(env, database_constructor, &constructorHandle));
 
   napi_value argv[] = { location };
   napi_value instance;
@@ -265,7 +263,7 @@ NAPI_METHOD(Database::Close) {
         leveldown::Iterator *iterator = it->second;
 
         napi_value iteratorHandle;
-        CHECK_NAPI_RESULT(napi_get_weakref_value(env, iterator->handle, &iteratorHandle));
+        CHECK_NAPI_RESULT(napi_get_reference_value(env, iterator->handle, &iteratorHandle));
         if (iteratorHandle != nullptr) {
           if (!iterator->ended) {
             napi_propertyname pnEnd;
@@ -420,7 +418,7 @@ NAPI_METHOD(Database::Batch) {
     napi_value type;
     CHECK_NAPI_RESULT(napi_get_property(env, obj, typeName, &type));
     napi_value delStr;
-    CHECK_NAPI_RESULT(napi_create_string(env, "del", &delStr));
+    CHECK_NAPI_RESULT(napi_create_string_utf8(env, "del", (int)strlen("del"), &delStr));
     bool r;
     CHECK_NAPI_RESULT(napi_strict_equals(env, type, delStr, &r));
 
@@ -434,7 +432,7 @@ NAPI_METHOD(Database::Batch) {
       DisposeStringOrBufferFromSlice(env, keyBuffer, key);
     } else {
       napi_value putStr;
-      CHECK_NAPI_RESULT(napi_create_string(env, "put", &putStr));
+      CHECK_NAPI_RESULT(napi_create_string_utf8(env, "put", (int)strlen("put"), &putStr));
       CHECK_NAPI_RESULT(napi_strict_equals(env, type, putStr, &r));
 
       if (r) {
@@ -511,7 +509,7 @@ NAPI_METHOD(Database::GetProperty) {
   std::string* value = new std::string();
   database->GetPropertyFromDatabase(property, value);
   napi_value returnValue;
-  CHECK_NAPI_RESULT(napi_create_string_with_length(env, value->c_str(), value->length(), &returnValue));
+  CHECK_NAPI_RESULT(napi_create_string_utf8(env, value->c_str(), value->length(), &returnValue));
 
   delete value;
   delete[] property.data();
