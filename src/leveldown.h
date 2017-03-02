@@ -24,7 +24,7 @@ static inline size_t StringOrBufferLength(napi_env env, napi_value obj) {
   else {
     int result;
     CHECK_NAPI_RESULT(napi_get_value_string_utf8_length(env, obj, &result));
-    sz = result;
+    sz = result+1;
   }
 
   return sz;
@@ -71,11 +71,11 @@ static inline void DisposeStringOrBufferFromSlice(
         CHECK_NAPI_RESULT(napi_coerce_to_string(env, from, &(to ## Str_)));                 \
         int sz;                                                                             \
         CHECK_NAPI_RESULT(napi_get_value_string_utf8_length(env, to ## Str_, &sz));         \
-        to ## Sz_ = sz;                                                                     \
+        to ## Sz_ = sz+1;                                                                   \
         to ## Ch_ = new char[to ## Sz_];                                                    \
         int unused;                                                                         \
         CHECK_NAPI_RESULT(                                                                  \
-          napi_get_value_string_utf8(env, to ## Str_, to ## Ch_, sz, &unused));             \
+          napi_get_value_string_utf8(env, to ## Str_, to ## Ch_, to ## Sz_, &unused));      \
       }                                                                                     \
     }                                                                                       \
   }                                                                                         \
@@ -105,11 +105,11 @@ static inline void DisposeStringOrBufferFromSlice(
       int sz;                                                                  \
       CHECK_NAPI_RESULT(napi_get_value_string_utf8_length(                     \
         env, to ## Str_, &sz));                                                \
-      to ## Sz_ = sz;                                                          \
+      to ## Sz_ = sz+1;                                                        \
       to ## Ch_ = new char[to ## Sz_];                                         \
       int unused;                                                              \
-      CHECK_NAPI_RESULT(                                                       \
-        napi_get_value_string_utf8(env, to ## Str_, to ## Ch_, sz, &unused));  \
+      CHECK_NAPI_RESULT(napi_get_value_string_utf8(                            \
+        env, to ## Str_, to ## Ch_, to ## Sz_, &unused));                      \
     }                                                                          \
   }
 
