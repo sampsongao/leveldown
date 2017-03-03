@@ -9,7 +9,7 @@ function Iterator (db, options) {
   this.binding    = db.binding.iterator(options)
   this.cache      = null
   this.finished   = false
-  this.fastFuture = fastFuture()
+  this.fastFuture = setTimeout
 }
 
 util.inherits(Iterator, AbstractIterator)
