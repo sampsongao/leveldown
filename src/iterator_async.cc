@@ -3,8 +3,7 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#include <node.h>
-#include <node_buffer.h>
+#include <napi.h>
 
 #include "database.h"
 #include "leveldown.h"
@@ -33,7 +32,7 @@ void NextWorker::Execute () {
 }
 
 void NextWorker::HandleOKCallback () {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
   size_t idx = 0;
   napi_env env;
   CHECK_NAPI_RESULT(napi_get_current_env(&env));

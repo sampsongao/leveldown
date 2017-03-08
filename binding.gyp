@@ -25,6 +25,7 @@
             "<(module_root_dir)/deps/leveldb/leveldb.gyp:leveldb"
         ]
       , "include_dirs"  : [
+            "<!(node -e \"require('napi')\")"
         ]
       , "sources": [
             "src/batch.cc"

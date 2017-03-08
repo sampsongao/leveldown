@@ -3,8 +3,7 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#include <node.h>
-#include <node_buffer.h>
+#include <napi.h>
 
 #include <leveldb/write_batch.h>
 #include <leveldb/filter_policy.h>
@@ -69,7 +68,7 @@ void CloseWorker::Execute () {
 }
 
 void CloseWorker::WorkComplete () {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
   HandleOKCallback();
   delete callback;
   callback = NULL;
@@ -85,7 +84,7 @@ IOWorker::IOWorker (
 ) : AsyncWorker(database, callback)
   , key(key)
 {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
 
   SaveToPersistent("key", keyHandle);
 };
@@ -93,7 +92,7 @@ IOWorker::IOWorker (
 IOWorker::~IOWorker () {}
 
 void IOWorker::WorkComplete () {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
 
   napi_env env;
   CHECK_NAPI_RESULT(napi_get_current_env(&env));
@@ -113,7 +112,7 @@ ReadWorker::ReadWorker (
 ) : IOWorker(database, callback, key, keyHandle)
   , asBuffer(asBuffer)
 {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
 
   options = new leveldb::ReadOptions();
   options->fill_cache = fillCache;
@@ -129,7 +128,7 @@ void ReadWorker::Execute () {
 }
 
 void ReadWorker::HandleOKCallback () {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
   napi_env env;
 
   CHECK_NAPI_RESULT(napi_get_current_env(&env));
@@ -164,7 +163,7 @@ DeleteWorker::DeleteWorker (
   , napi_value keyHandle
 ) : IOWorker(database, callback, key, keyHandle)
 {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
 
   options = new leveldb::WriteOptions();
   options->sync = sync;
@@ -192,7 +191,7 @@ WriteWorker::WriteWorker (
 ) : DeleteWorker(database, callback, key, sync, keyHandle)
   , value(value)
 {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
 
   SaveToPersistent("value", valueHandle);
 };
@@ -204,7 +203,7 @@ void WriteWorker::Execute () {
 }
 
 void WriteWorker::WorkComplete () {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
 
   napi_env env;
   CHECK_NAPI_RESULT(napi_get_current_env(&env));
@@ -247,7 +246,7 @@ ApproximateSizeWorker::ApproximateSizeWorker (
 ) : AsyncWorker(database, callback)
   , range(start, end)
 {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
 
   SaveToPersistent("start", startHandle);
   SaveToPersistent("end", endHandle);
@@ -260,7 +259,7 @@ void ApproximateSizeWorker::Execute () {
 }
 
 void ApproximateSizeWorker::WorkComplete() {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
   napi_env env;
   CHECK_NAPI_RESULT(napi_get_current_env(&env));
 
@@ -270,7 +269,7 @@ void ApproximateSizeWorker::WorkComplete() {
 }
 
 void ApproximateSizeWorker::HandleOKCallback () {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
   napi_env env;
   CHECK_NAPI_RESULT(napi_get_current_env(&env));
 

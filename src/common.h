@@ -14,7 +14,7 @@ inline bool BooleanOptionValue(napi_env env,
                                    napi_value options,
                                    const char* _key,
                                    bool def = false) {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
   napi_propertyname key;
   CHECK_NAPI_RESULT(napi_property_name(env, _key, &key));
 
@@ -37,7 +37,7 @@ inline uint32_t UInt32OptionValue(napi_env env,
                                       napi_value options,
                                       const char* _key,
                                       uint32_t def) {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
   napi_propertyname key;
   CHECK_NAPI_RESULT(napi_property_name(env, _key, &key));
 

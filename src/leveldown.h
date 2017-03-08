@@ -5,15 +5,16 @@
 #ifndef LD_LEVELDOWN_H
 #define LD_LEVELDOWN_H
 
-#include <node.h>
-#include <node_api_helpers.h>
-#include <node_buffer.h>
+#include <napi.h>
 #include <leveldb/slice.h>
+
+#define NAPI_METHOD(name) \
+  void name(napi_env env, napi_callback_info info)
 
 #define CHECK_NAPI_RESULT(condition) (assert((condition) == napi_ok))
 
 static inline size_t StringOrBufferLength(napi_env env, napi_value obj) {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
   bool result;
   CHECK_NAPI_RESULT(napi_is_buffer(env, obj, &result));
 

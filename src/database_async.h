@@ -7,7 +7,7 @@
 #define LD_DATABASE_ASYNC_H
 
 #include <vector>
-#include <node.h>
+#include <napi.h>
 
 #include <leveldb/cache.h>
 

@@ -2,7 +2,7 @@
 #define LD_BATCH_H
 
 #include <vector>
-#include <node.h>
+#include <napi.h>
 
 #include <leveldb/write_batch.h>
 

@@ -6,7 +6,7 @@
 #ifndef LD_LEVELDOWN_ASYNC_H
 #define LD_LEVELDOWN_ASYNC_H
 
-#include <node.h>
+#include <napi.h>
 
 #include "async.h"
 

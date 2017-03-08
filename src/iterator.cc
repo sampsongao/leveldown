@@ -3,8 +3,7 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#include <node.h>
-#include <node_buffer.h>
+#include <napi.h>
 
 #include "database.h"
 #include "iterator.h"
@@ -49,7 +48,7 @@ Iterator::Iterator (
   , valueAsBuffer(valueAsBuffer)
   , handle(nullptr)
 {
-  Napi::HandleScope scope;
+  Napi::HandleScope scope(env);
 
   options    = new leveldb::ReadOptions();
   options->fill_cache = fillCache;
@@ -86,7 +85,7 @@ Iterator::~Iterator () {
     delete lte;
   if (gte != NULL)
     delete gte;
-  
+
   //napi_env env;
   //CHECK_NAPI_RESULT(napi_get_current_env(&env));
   //CHECK_NAPI_RESULT(napi_reference_release(env, handle, nullptr));

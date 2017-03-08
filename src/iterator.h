@@ -6,7 +6,7 @@
 #ifndef LD_ITERATOR_H
 #define LD_ITERATOR_H
 
-#include <node.h>
+#include <napi.h>
 #include <vector>
 
 #include "leveldown.h"

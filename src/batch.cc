@@ -1,5 +1,4 @@
-#include <node.h>
-#include <node_buffer.h>
+#include <napi.h>
 
 #include "database.h"
 #include "batch_async.h"

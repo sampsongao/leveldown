@@ -8,8 +8,7 @@
 
 #include <map>
 #include <vector>
-#include <node.h>
-#include <node_api_helpers.h>
+#include <napi.h>
 
 #include <leveldb/cache.h>
 #include <leveldb/db.h>

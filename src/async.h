@@ -6,7 +6,7 @@
 #ifndef LD_ASYNC_H
 #define LD_ASYNC_H
 
-#include <node.h>
+#include <napi.h>
 #include "database.h"
 
 namespace leveldown {

@@ -3,9 +3,7 @@
  * MIT License <https://github.com/level/leveldown/blob/master/LICENSE.md>
  */
 
-#include <node.h>
-#include <node_api_helpers.h>
-#include <node_buffer.h>
+#include <napi.h>
 
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>
@@ -166,7 +164,7 @@ NAPI_METHOD(Database::New) {
   CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
 
   Database* obj = new Database(args[0]);
-  
+
   CHECK_NAPI_RESULT(napi_wrap(env, _this, obj, Database::Destructor, nullptr));
   CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
 }

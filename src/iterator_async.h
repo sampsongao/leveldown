@@ -6,7 +6,7 @@
 #ifndef LD_ITERATOR_ASYNC_H
 #define LD_ITERATOR_ASYNC_H
 
-#include <node.h>
+#include <napi.h>
 
 #include "async.h"
 #include "iterator.h"
