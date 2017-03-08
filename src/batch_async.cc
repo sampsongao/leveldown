@@ -14,8 +14,9 @@ namespace leveldown {
 
 BatchWriteWorker::BatchWriteWorker (
     Batch* batch
+  , napi_env env
   , napi_value callback
-) : AsyncWorker(NULL, callback)
+) : AsyncWorker(NULL, env, callback)
   , batch(batch)
 {};
 

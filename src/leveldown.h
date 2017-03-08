@@ -11,6 +11,10 @@
 #define NAPI_METHOD(name) \
   void name(napi_env env, napi_callback_info info)
 
+namespace Napi {
+  typedef FunctionReference Callback;
+}
+
 #define CHECK_NAPI_RESULT(condition) (assert((condition) == napi_ok))
 
 static inline size_t StringOrBufferLength(napi_env env, napi_value obj) {

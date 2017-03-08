@@ -18,6 +18,7 @@ class BatchWriteWorker : public AsyncWorker {
 public:
   BatchWriteWorker (
       Batch* batch
+    , napi_env env
     , napi_value callback
   );
 

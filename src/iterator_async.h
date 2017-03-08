@@ -17,13 +17,14 @@ class NextWorker : public AsyncWorker {
 public:
   NextWorker (
       Iterator* iterator
+    , napi_env env
     , napi_value callback
     , void (*localCallback)(Iterator*)
   );
 
   virtual ~NextWorker ();
   virtual void Execute ();
-  virtual void HandleOKCallback ();
+  virtual void OnOK ();
 
 private:
   Iterator* iterator;
@@ -36,12 +37,13 @@ class EndWorker : public AsyncWorker {
 public:
   EndWorker (
       Iterator* iterator
+    , napi_env env
     , napi_value callback
   );
 
   virtual ~EndWorker ();
   virtual void Execute ();
-  virtual void HandleOKCallback ();
+  virtual void OnOK ();
 
 private:
   Iterator* iterator;

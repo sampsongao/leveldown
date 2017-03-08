@@ -17,16 +17,17 @@ void DestroyDB (napi_env env, napi_callback_info info) {
   napi_value args[2];
   CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 2));
 
-  Napi::Utf8String* location = new Napi::Utf8String(args[0]);
+  std::string location = std::move(Napi::String(env, args[0]));
 
   napi_value callback = args[1];
 
   DestroyWorker* worker = new DestroyWorker(
       location
+    , env
     , callback
   );
 
-  Napi::AsyncQueueWorker(worker);
+  worker->Queue();
 
   napi_value undefined;
   CHECK_NAPI_RESULT(napi_get_undefined(env, &undefined));
@@ -37,16 +38,17 @@ void RepairDB (napi_env env, napi_callback_info info) {
   napi_value args[2];
   CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 2));
 
-  Napi::Utf8String* location = new Napi::Utf8String(args[0]);
+  std::string location = std::move(Napi::String(env, args[0]));
 
   napi_value callback = args[1];
 
   RepairWorker* worker = new RepairWorker(
       location
+    , env
     , callback
   );
 
-  Napi::AsyncQueueWorker(worker);
+  worker->Queue();
 
   napi_value undefined;
   CHECK_NAPI_RESULT(napi_get_undefined(env, &undefined));

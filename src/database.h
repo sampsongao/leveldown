@@ -53,11 +53,11 @@ public:
   void CloseDatabase ();
   void ReleaseIterator (uint32_t id);
 
-  Database (napi_value from);
+  Database (napi_env env, napi_value from);
   ~Database ();
 
 private:
-  Napi::Utf8String* location;
+  std::string location;
   leveldb::DB* db;
   uint32_t currentIteratorId;
   void(*pendingCloseWorker);

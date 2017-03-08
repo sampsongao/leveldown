@@ -30,6 +30,7 @@ public:
 
   Iterator (
       Database* database
+    , napi_env env
     , uint32_t id
     , leveldb::Slice* start
     , std::string* end

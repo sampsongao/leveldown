@@ -168,10 +168,10 @@ NAPI_METHOD(Batch::Write) {
 
   if (batch->hasData) {
     napi_value callback = args[0];
-    BatchWriteWorker* worker  = new BatchWriteWorker(batch, callback);
+    BatchWriteWorker* worker  = new BatchWriteWorker(batch, env, callback);
     // persist to prevent accidental GC
-    worker->SaveToPersistent("batch", _this);
-    Napi::AsyncQueueWorker(worker);
+    worker->Persistent().Set("batch", _this);
+    worker->Queue();
   } else {
     LD_RUN_CALLBACK(args[0], 0, NULL);
   }

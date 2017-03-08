@@ -13,37 +13,37 @@ namespace leveldown {
 /** DESTROY WORKER **/
 
 DestroyWorker::DestroyWorker (
-    Napi::Utf8String* location
+    std::string location
+  , napi_env env
   , napi_value callback
-) : AsyncWorker(NULL, callback)
+) : AsyncWorker(NULL, env, callback)
   , location(location)
 {};
 
 DestroyWorker::~DestroyWorker () {
-  delete location;
 }
 
 void DestroyWorker::Execute () {
   leveldb::Options options;
-  SetStatus(leveldb::DestroyDB(**location, options));
+  SetStatus(leveldb::DestroyDB(location, options));
 }
 
 /** REPAIR WORKER **/
 
 RepairWorker::RepairWorker (
-    Napi::Utf8String* location
+    std::string location
+  , napi_env env
   , napi_value callback
-) : AsyncWorker(NULL, callback)
+) : AsyncWorker(NULL, env, callback)
   , location(location)
 {};
 
 RepairWorker::~RepairWorker () {
-  delete location;
 }
 
 void RepairWorker::Execute () {
   leveldb::Options options;
-  SetStatus(leveldb::RepairDB(**location, options));
+  SetStatus(leveldb::RepairDB(location, options));
 }
 
 } // namespace leveldown

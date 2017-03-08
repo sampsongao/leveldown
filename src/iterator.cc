@@ -16,6 +16,7 @@ static napi_ref iterator_constructor;
 
 Iterator::Iterator (
     Database* database
+  , napi_env env
   , uint32_t id
   , leveldb::Slice* start
   , std::string* end
@@ -48,7 +49,7 @@ Iterator::Iterator (
   , valueAsBuffer(valueAsBuffer)
   , handle(nullptr)
 {
-  Napi::HandleScope scope(env);
+  Napi::HandleScope scpoe(env);
 
   options    = new leveldb::ReadOptions();
   options->fill_cache = fillCache;
@@ -212,7 +213,7 @@ void Iterator::Release () {
 void checkEndCallback (Iterator* iterator) {
   iterator->nexting = false;
   if (iterator->endWorker != NULL) {
-    Napi::AsyncQueueWorker(iterator->endWorker);
+    iterator->endWorker->Queue();
     iterator->endWorker = NULL;
   }
 }
@@ -227,13 +228,13 @@ NAPI_METHOD(Iterator::Seek) {
   Iterator* iterator = static_cast<Iterator*>(unwrapped);
   iterator->GetIterator();
   leveldb::Iterator* dbIterator = iterator->dbIterator;
-  Napi::Utf8String key(args[0]);
+  std::string key = std::move(Napi::String(env, args[0]));
 
-  dbIterator->Seek(*key);
+  dbIterator->Seek(key);
   iterator->seeking = true;
 
   if (dbIterator->Valid()) {
-    int cmp = dbIterator->key().compare(*key);
+    int cmp = dbIterator->key().compare(key);
     if (cmp > 0 && iterator->reverse) {
       dbIterator->Prev();
     } else if (cmp < 0 && !iterator->reverse) {
@@ -246,7 +247,7 @@ NAPI_METHOD(Iterator::Seek) {
       dbIterator->SeekToFirst();
     }
     if (dbIterator->Valid()) {
-      int cmp = dbIterator->key().compare(*key);
+      int cmp = dbIterator->key().compare(key);
       if (cmp > 0 && iterator->reverse) {
         dbIterator->SeekToFirst();
         dbIterator->Prev();
@@ -282,13 +283,14 @@ NAPI_METHOD(Iterator::Next) {
 
   NextWorker* worker = new NextWorker(
       iterator
+    , env
     , callback
     , checkEndCallback
   );
   // persist to prevent accidental GC
-  worker->SaveToPersistent("iterator", _this);
+  worker->Persistent().Set("iterator", _this);
   iterator->nexting = true;
-  Napi::AsyncQueueWorker(worker);
+  worker->Queue();
 
   napi_value holder;
   CHECK_NAPI_RESULT(napi_get_cb_holder(env, info, &holder));
@@ -315,17 +317,18 @@ NAPI_METHOD(Iterator::End) {
 
     EndWorker* worker = new EndWorker(
         iterator
+      , env
       , callback
     );
     // persist to prevent accidental GC
-    worker->SaveToPersistent("iterator", _this);
+    worker->Persistent().Set("iterator", _this);
     iterator->ended = true;
 
     if (iterator->nexting) {
       // waiting for a next() to return, queue the end
       iterator->endWorker = worker;
     } else {
-      Napi::AsyncQueueWorker(worker);
+      worker->Queue();
     }
   }
 
@@ -607,6 +610,7 @@ NAPI_METHOD(Iterator::New) {
 
   Iterator* iterator = new Iterator(
       database
+    , env
     , intId
     , start
     , end

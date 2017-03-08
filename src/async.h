@@ -17,8 +17,9 @@ class Database;
 public:
   AsyncWorker (
       leveldown::Database* database
+    , napi_env env
     , napi_value callback
-  ) : Napi::AsyncWorker(new Napi::Callback(callback)), database(database) { }
+  ) : Napi::AsyncWorker(Napi::Function(env, callback)), database(database) { }
 
 protected:
   void SetStatus(leveldb::Status status) {

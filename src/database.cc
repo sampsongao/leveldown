@@ -20,8 +20,8 @@ namespace leveldown {
 
 static napi_ref database_constructor;
 
-Database::Database (napi_value from)
-  : location(new Napi::Utf8String(from))
+Database::Database (napi_env env, napi_value from)
+  : location(std::move(Napi::String(env, from)))
   , db(NULL)
   , currentIteratorId(0)
   , pendingCloseWorker(NULL)
@@ -31,7 +31,6 @@ Database::Database (napi_value from)
 Database::~Database () {
   if (db != NULL)
     delete db;
-  delete location;
 };
 
 /* Calls from worker threads, NO V8 HERE *****************************/
@@ -39,7 +38,7 @@ Database::~Database () {
 leveldb::Status Database::OpenDatabase (
         leveldb::Options* options
     ) {
-  return leveldb::DB::Open(*options, **location, &db);
+  return leveldb::DB::Open(*options, location, &db);
 }
 
 leveldb::Status Database::PutToDatabase (
@@ -105,7 +104,7 @@ void Database::ReleaseIterator (uint32_t id) {
   // iterators to end before we can close them
   iterators.erase(id);
   if (iterators.empty() && pendingCloseWorker != NULL) {
-    Napi::AsyncQueueWorker((AsyncWorker*)pendingCloseWorker);
+    ((AsyncWorker*)pendingCloseWorker)->Queue();
     pendingCloseWorker = NULL;
   }
 }
@@ -163,7 +162,7 @@ NAPI_METHOD(Database::New) {
   napi_value _this;
   CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
 
-  Database* obj = new Database(args[0]);
+  Database* obj = new Database(env, args[0]);
 
   CHECK_NAPI_RESULT(napi_wrap(env, _this, obj, Database::Destructor, nullptr));
   CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
@@ -210,6 +209,7 @@ NAPI_METHOD(Database::Open) {
 
   OpenWorker* worker = new OpenWorker(
       database
+    , env
     , callback
     , database->blockCache
     , database->filterPolicy
@@ -222,8 +222,8 @@ NAPI_METHOD(Database::Open) {
     , blockRestartInterval
   );
   // persist to prevent accidental GC
-  worker->SaveToPersistent("database", _this);
-  Napi::AsyncQueueWorker(worker);
+  worker->Persistent().Set("database", _this);
+  worker->Queue();
 }
 
 // for an empty callback to iterator.end()
@@ -235,10 +235,11 @@ NAPI_METHOD(Database::Close) {
 
   CloseWorker* worker = new CloseWorker(
       database
+    , env
     , callback
   );
   // persist to prevent accidental GC
-  worker->SaveToPersistent("database", _this);
+  worker->Persistent().Set("database", _this);
 
   if (!database->iterators.empty()) {
     // yikes, we still have iterators open! naughty naughty.
@@ -289,7 +290,7 @@ NAPI_METHOD(Database::Close) {
         }
     }
   } else {
-    Napi::AsyncQueueWorker(worker);
+    worker->Queue();
   }
 }
 
@@ -305,6 +306,7 @@ NAPI_METHOD(Database::Put) {
 
   WriteWorker* worker  = new WriteWorker(
       database
+    , env
     , callback
     , key
     , value
@@ -314,8 +316,8 @@ NAPI_METHOD(Database::Put) {
   );
 
   // persist to prevent accidental GC
-  worker->SaveToPersistent("database", _this);
-  Napi::AsyncQueueWorker(worker);
+  worker->Persistent().Set("database", _this);
+  worker->Queue();
 }
 
 NAPI_METHOD(Database::Get) {
@@ -329,6 +331,7 @@ NAPI_METHOD(Database::Get) {
 
   ReadWorker* worker = new ReadWorker(
       database
+    , env
     , callback
     , key
     , asBuffer
@@ -336,8 +339,8 @@ NAPI_METHOD(Database::Get) {
     , keyHandle
   );
   // persist to prevent accidental GC
-  worker->SaveToPersistent("database", _this);
-  Napi::AsyncQueueWorker(worker);
+  worker->Persistent().Set("database", _this);
+  worker->Queue();
 }
 
 NAPI_METHOD(Database::Delete) {
@@ -350,14 +353,15 @@ NAPI_METHOD(Database::Delete) {
 
   DeleteWorker* worker = new DeleteWorker(
       database
+    , env
     , callback
     , key
     , sync
     , keyHandle
   );
   // persist to prevent accidental GC
-  worker->SaveToPersistent("database", _this);
-  Napi::AsyncQueueWorker(worker);
+  worker->Persistent().Set("database", _this);
+  worker->Queue();
 }
 
 NAPI_METHOD(Database::Batch) {
@@ -455,13 +459,14 @@ NAPI_METHOD(Database::Batch) {
   if (hasData) {
     BatchWorker* worker = new BatchWorker(
         database
+      , env
       , callback
       , batch
       , sync
     );
     // persist to prevent accidental GC
-    worker->SaveToPersistent("database", _this);
-    Napi::AsyncQueueWorker(worker);
+    worker->Persistent().Set("database", _this);
+    worker->Queue();
   } else {
     LD_RUN_CALLBACK(callback, 0, NULL);
   }
@@ -478,6 +483,7 @@ NAPI_METHOD(Database::ApproximateSize) {
 
   ApproximateSizeWorker* worker  = new ApproximateSizeWorker(
       database
+    , env
     , callback
     , start
     , end
@@ -485,8 +491,8 @@ NAPI_METHOD(Database::ApproximateSize) {
     , endHandle
   );
   // persist to prevent accidental GC
-  worker->SaveToPersistent("database", _this);
-  Napi::AsyncQueueWorker(worker);
+  worker->Persistent().Set("database", _this);
+  worker->Queue();
 }
 
 NAPI_METHOD(Database::GetProperty) {

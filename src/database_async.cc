@@ -19,6 +19,7 @@ namespace leveldown {
 
 OpenWorker::OpenWorker (
     Database *database
+  , napi_env env
   , napi_value callback
   , leveldb::Cache* blockCache
   , const leveldb::FilterPolicy* filterPolicy
@@ -29,7 +30,7 @@ OpenWorker::OpenWorker (
   , uint32_t blockSize
   , uint32_t maxOpenFiles
   , uint32_t blockRestartInterval
-) : AsyncWorker(database, callback)
+) : AsyncWorker(database, env, callback)
 {
   options = new leveldb::Options();
   options->block_cache            = blockCache;
@@ -57,8 +58,9 @@ void OpenWorker::Execute () {
 
 CloseWorker::CloseWorker (
     Database *database
+  , napi_env env
   , napi_value callback
-) : AsyncWorker(database, callback)
+) : AsyncWorker(database, env, callback)
 {};
 
 CloseWorker::~CloseWorker () {}
@@ -68,35 +70,33 @@ void CloseWorker::Execute () {
 }
 
 void CloseWorker::WorkComplete () {
-  Napi::HandleScope scope(env);
-  HandleOKCallback();
-  delete callback;
-  callback = NULL;
+  Napi::HandleScope scope(Env());
+  OnOK();
+  _callback.Reset();
 }
 
 /** IO WORKER (abstract) **/
 
 IOWorker::IOWorker (
     Database *database
+  , napi_env env
   , napi_value callback
   , leveldb::Slice key
   , napi_value keyHandle
-) : AsyncWorker(database, callback)
+) : AsyncWorker(database, env, callback)
   , key(key)
 {
   Napi::HandleScope scope(env);
 
-  SaveToPersistent("key", keyHandle);
+  _persistent.Set("key", keyHandle);
 };
 
 IOWorker::~IOWorker () {}
 
 void IOWorker::WorkComplete () {
-  Napi::HandleScope scope(env);
+  Napi::HandleScope scope(Env());
 
-  napi_env env;
-  CHECK_NAPI_RESULT(napi_get_current_env(&env));
-  DisposeStringOrBufferFromSlice(env, GetFromPersistent("key"), key);
+  DisposeStringOrBufferFromSlice(Env(), _persistent.Get("key"), key);
   AsyncWorker::WorkComplete();
 }
 
@@ -104,19 +104,20 @@ void IOWorker::WorkComplete () {
 
 ReadWorker::ReadWorker (
     Database *database
+  , napi_env env
   , napi_value callback
   , leveldb::Slice key
   , bool asBuffer
   , bool fillCache
   , napi_value keyHandle
-) : IOWorker(database, callback, key, keyHandle)
+) : IOWorker(database, env, callback, key, keyHandle)
   , asBuffer(asBuffer)
 {
   Napi::HandleScope scope(env);
 
   options = new leveldb::ReadOptions();
   options->fill_cache = fillCache;
-  SaveToPersistent("key", keyHandle);
+  _persistent.Set("key", keyHandle);
 };
 
 ReadWorker::~ReadWorker () {
@@ -127,47 +128,47 @@ void ReadWorker::Execute () {
   SetStatus(database->GetFromDatabase(options, key, value));
 }
 
-void ReadWorker::HandleOKCallback () {
-  Napi::HandleScope scope(env);
-  napi_env env;
-
-  CHECK_NAPI_RESULT(napi_get_current_env(&env));
+void ReadWorker::OnOK () {
+  Napi::HandleScope scope(Env());
 
   napi_value returnValue;
   if (asBuffer) {
     //TODO: could use NewBuffer if we carefully manage the lifecycle of `value`
     //and avoid an an extra allocation. We'd have to clean up properly when not OK
     //and let the new Buffer manage the data when OK
-    CHECK_NAPI_RESULT(napi_create_buffer_copy(env, value.data(), value.size(), &returnValue));
+    CHECK_NAPI_RESULT(napi_create_buffer_copy(Env(), value.data(), value.size(), &returnValue));
   } else {
-    CHECK_NAPI_RESULT(napi_create_string_utf8(env, (char*)value.data(), value.size(), &returnValue));
+    CHECK_NAPI_RESULT(napi_create_string_utf8(Env(), (char*)value.data(), value.size(), &returnValue));
   }
 
   napi_value nullVal;
-  CHECK_NAPI_RESULT(napi_get_null(env, &nullVal));
+  CHECK_NAPI_RESULT(napi_get_null(Env(), &nullVal));
 
-  napi_value argv[] = {
-      nullVal
-    , returnValue
-  };
-  callback->Call(2, argv);
+  napi_value globalVal;
+  CHECK_NAPI_RESULT(napi_get_global(Env(), &globalVal));
+
+  _callback.Call(globalVal, {
+    nullVal,
+    returnValue,
+  });
 }
 
 /** DELETE WORKER **/
 
 DeleteWorker::DeleteWorker (
     Database *database
+  , napi_env env
   , napi_value callback
   , leveldb::Slice key
   , bool sync
   , napi_value keyHandle
-) : IOWorker(database, callback, key, keyHandle)
+) : IOWorker(database, env, callback, key, keyHandle)
 {
   Napi::HandleScope scope(env);
 
   options = new leveldb::WriteOptions();
   options->sync = sync;
-  SaveToPersistent("key", keyHandle);
+  _persistent.Set("key", keyHandle);
 };
 
 DeleteWorker::~DeleteWorker () {
@@ -182,18 +183,19 @@ void DeleteWorker::Execute () {
 
 WriteWorker::WriteWorker (
     Database *database
+  , napi_env env
   , napi_value callback
   , leveldb::Slice key
   , leveldb::Slice value
   , bool sync
   , napi_value keyHandle
   , napi_value valueHandle
-) : DeleteWorker(database, callback, key, sync, keyHandle)
+) : DeleteWorker(database, env, callback, key, sync, keyHandle)
   , value(value)
 {
   Napi::HandleScope scope(env);
 
-  SaveToPersistent("value", valueHandle);
+  _persistent.Set("value", valueHandle);
 };
 
 WriteWorker::~WriteWorker () { }
@@ -203,11 +205,9 @@ void WriteWorker::Execute () {
 }
 
 void WriteWorker::WorkComplete () {
-  Napi::HandleScope scope(env);
+  Napi::HandleScope scope(Env());
 
-  napi_env env;
-  CHECK_NAPI_RESULT(napi_get_current_env(&env));
-  DisposeStringOrBufferFromSlice(env, GetFromPersistent("value"), value);
+  DisposeStringOrBufferFromSlice(Env(), _persistent.Get("value"), value);
   IOWorker::WorkComplete();
 }
 
@@ -215,10 +215,11 @@ void WriteWorker::WorkComplete () {
 
 BatchWorker::BatchWorker (
     Database *database
+  , napi_env env
   , napi_value callback
   , leveldb::WriteBatch* batch
   , bool sync
-) : AsyncWorker(database, callback)
+) : AsyncWorker(database, env, callback)
   , batch(batch)
 {
   options = new leveldb::WriteOptions();
@@ -238,18 +239,19 @@ void BatchWorker::Execute () {
 
 ApproximateSizeWorker::ApproximateSizeWorker (
     Database *database
+  , napi_env env
   , napi_value callback
   , leveldb::Slice start
   , leveldb::Slice end
   , napi_value startHandle
   , napi_value endHandle
-) : AsyncWorker(database, callback)
+) : AsyncWorker(database, env, callback)
   , range(start, end)
 {
   Napi::HandleScope scope(env);
 
-  SaveToPersistent("start", startHandle);
-  SaveToPersistent("end", endHandle);
+  _persistent.Set("start", startHandle);
+  _persistent.Set("end", endHandle);
 };
 
 ApproximateSizeWorker::~ApproximateSizeWorker () {}
@@ -259,31 +261,29 @@ void ApproximateSizeWorker::Execute () {
 }
 
 void ApproximateSizeWorker::WorkComplete() {
-  Napi::HandleScope scope(env);
-  napi_env env;
-  CHECK_NAPI_RESULT(napi_get_current_env(&env));
+  Napi::HandleScope scope(Env());
 
-  DisposeStringOrBufferFromSlice(env, GetFromPersistent("start"), range.start);
-  DisposeStringOrBufferFromSlice(env, GetFromPersistent("end"), range.limit);
+  DisposeStringOrBufferFromSlice(Env(), _persistent.Get("start"), range.start);
+  DisposeStringOrBufferFromSlice(Env(), _persistent.Get("end"), range.limit);
   AsyncWorker::WorkComplete();
 }
 
-void ApproximateSizeWorker::HandleOKCallback () {
-  Napi::HandleScope scope(env);
-  napi_env env;
-  CHECK_NAPI_RESULT(napi_get_current_env(&env));
+void ApproximateSizeWorker::OnOK () {
+  Napi::HandleScope scope(Env());
 
   napi_value returnValue;
-  CHECK_NAPI_RESULT(napi_create_number(env, (double)size, &returnValue));
+  CHECK_NAPI_RESULT(napi_create_number(Env(), (double)size, &returnValue));
 
   napi_value nullVal;
-  CHECK_NAPI_RESULT(napi_get_null(env, &nullVal));
+  CHECK_NAPI_RESULT(napi_get_null(Env(), &nullVal));
 
-  napi_value argv[] = {
-      nullVal
-    , returnValue
-  };
-  callback->Call(2, argv);
+  napi_value globalVal;
+  CHECK_NAPI_RESULT(napi_get_global(Env(), &globalVal));
+
+  _callback.Call(globalVal, {
+    nullVal,
+    returnValue,
+  });
 }
 
 } // namespace leveldown

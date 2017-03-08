@@ -16,9 +16,10 @@ namespace leveldown {
 
 NextWorker::NextWorker (
     Iterator* iterator
+  , napi_env env
   , napi_value callback
   , void (*localCallback)(Iterator*)
-) : AsyncWorker(NULL, callback)
+) : AsyncWorker(NULL, env, callback)
   , iterator(iterator)
   , localCallback(localCallback)
 {};
@@ -31,8 +32,8 @@ void NextWorker::Execute () {
     SetStatus(iterator->IteratorStatus());
 }
 
-void NextWorker::HandleOKCallback () {
-  Napi::HandleScope scope(env);
+void NextWorker::OnOK () {
+  Napi::HandleScope scope(Env());
   size_t idx = 0;
   napi_env env;
   CHECK_NAPI_RESULT(napi_get_current_env(&env));
@@ -75,21 +76,24 @@ void NextWorker::HandleOKCallback () {
   napi_value boolVal;
   CHECK_NAPI_RESULT(napi_create_boolean(env, !ok, &boolVal));
 
-  napi_value argv[] = {
-      nullVal
-    , returnArray
+  napi_value globalVal;
+  CHECK_NAPI_RESULT(napi_get_global(Env(), &globalVal));
+
+  _callback.Call(globalVal, {
+    nullVal,
+    returnArray,
     // when ok === false all data has been read, so it's then finished
-    , boolVal
-  };
-  callback->Call(3, argv);
+    boolVal,
+  });
 }
 
 /** END WORKER **/
 
 EndWorker::EndWorker (
     Iterator* iterator
+  , napi_env env
   , napi_value callback
-) : AsyncWorker(NULL, callback)
+) : AsyncWorker(NULL, env, callback)
   , iterator(iterator)
 {};
 
@@ -99,9 +103,13 @@ void EndWorker::Execute () {
   iterator->IteratorEnd();
 }
 
-void EndWorker::HandleOKCallback () {
+void EndWorker::OnOK () {
   iterator->Release();
-  callback->Call(0, NULL);
+
+  napi_value globalVal;
+  CHECK_NAPI_RESULT(napi_get_global(Env(), &globalVal));
+
+  _callback.Call(globalVal, {});
 }
 
 } // namespace leveldown

@@ -19,6 +19,7 @@ class OpenWorker : public AsyncWorker {
 public:
   OpenWorker (
       Database *database
+    , napi_env env
     , napi_value callback
     , leveldb::Cache* blockCache
     , const leveldb::FilterPolicy* filterPolicy
@@ -42,6 +43,7 @@ class CloseWorker : public AsyncWorker {
 public:
   CloseWorker (
       Database *database
+    , napi_env env
     , napi_value callback
   );
 
@@ -54,6 +56,7 @@ class IOWorker    : public AsyncWorker {
 public:
   IOWorker (
       Database *database
+    , napi_env env
     , napi_value callback
     , leveldb::Slice key
     , napi_value keyHandle
@@ -70,6 +73,7 @@ class ReadWorker : public IOWorker {
 public:
   ReadWorker (
       Database *database
+    , napi_env env
     , napi_value callback
     , leveldb::Slice key
     , bool asBuffer
@@ -79,7 +83,7 @@ public:
 
   virtual ~ReadWorker ();
   virtual void Execute ();
-  virtual void HandleOKCallback ();
+  virtual void OnOK ();
 
 private:
   bool asBuffer;
@@ -91,6 +95,7 @@ class DeleteWorker : public IOWorker {
 public:
   DeleteWorker (
       Database *database
+    , napi_env env
     , napi_value callback
     , leveldb::Slice key
     , bool sync
@@ -108,6 +113,7 @@ class WriteWorker : public DeleteWorker {
 public:
   WriteWorker (
       Database *database
+    , napi_env env
     , napi_value callback
     , leveldb::Slice key
     , leveldb::Slice value
@@ -128,6 +134,7 @@ class BatchWorker : public AsyncWorker {
 public:
   BatchWorker (
       Database *database
+    , napi_env env
     , napi_value callback
     , leveldb::WriteBatch* batch
     , bool sync
@@ -145,6 +152,7 @@ class ApproximateSizeWorker : public AsyncWorker {
 public:
   ApproximateSizeWorker (
       Database *database
+    , napi_env env
     , napi_value callback
     , leveldb::Slice start
     , leveldb::Slice end
@@ -154,7 +162,7 @@ public:
 
   virtual ~ApproximateSizeWorker ();
   virtual void Execute ();
-  virtual void HandleOKCallback ();
+  virtual void OnOK ();
   virtual void WorkComplete ();
 
   private:
