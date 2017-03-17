@@ -11,20 +11,18 @@
 namespace leveldown {
 
 inline bool BooleanOptionValue(napi_env env,
-                                   napi_value options,
-                                   const char* _key,
-                                   bool def = false) {
+                               napi_value options,
+                               const char* key,
+                               bool def = false) {
   Napi::HandleScope scope(env);
-  napi_propertyname key;
-  CHECK_NAPI_RESULT(napi_property_name(env, _key, &key));
 
   if (options) {
     bool result;
-    CHECK_NAPI_RESULT(napi_has_property(env, options, key, &result));
+    CHECK_NAPI_RESULT(napi_has_named_property(env, options, key, &result));
 
     if (result) {
       napi_value v;
-      CHECK_NAPI_RESULT(napi_get_property(env, options, key, &v));
+      CHECK_NAPI_RESULT(napi_get_named_property(env, options, key, &v));
       CHECK_NAPI_RESULT(napi_get_value_bool(env, v, &result));
       return result;
     }
@@ -35,19 +33,17 @@ inline bool BooleanOptionValue(napi_env env,
 
 inline uint32_t UInt32OptionValue(napi_env env,
                                       napi_value options,
-                                      const char* _key,
+                                      const char* key,
                                       uint32_t def) {
   Napi::HandleScope scope(env);
-  napi_propertyname key;
-  CHECK_NAPI_RESULT(napi_property_name(env, _key, &key));
 
   if (options) {
     bool result;
-    CHECK_NAPI_RESULT(napi_has_property(env, options, key, &result));
+    CHECK_NAPI_RESULT(napi_has_named_property(env, options, key, &result));
 
     if (result) {
       napi_value v;
-      CHECK_NAPI_RESULT(napi_get_property(env, options, key, &v));
+      CHECK_NAPI_RESULT(napi_get_named_property(env, options, key, &v));
       napi_valuetype t;
       CHECK_NAPI_RESULT(napi_get_type_of_value(env, v, &t));
 

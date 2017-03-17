@@ -69,7 +69,7 @@ private:
   static void WriteDoing(napi_work req);
   static void WriteAfter(napi_work req);
 
-  static void Destructor (void* obj);
+  static void Destructor (void* obj, void* hint);
 
   static NAPI_METHOD(New);
   static NAPI_METHOD(Open);

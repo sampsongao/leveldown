@@ -21,7 +21,7 @@ Batch::~Batch () {
   delete batch;
 }
 
-void Batch::Destructor(void* obj) {
+void Batch::Destructor(void* obj, void* hint) {
   Batch* batch = static_cast<Batch*>(obj);
   delete batch;
 }
@@ -68,7 +68,7 @@ NAPI_METHOD(Batch::New) {
 
   Batch* batch = new Batch(database, sync);
 
-  CHECK_NAPI_RESULT(napi_wrap(env, _this, batch, Batch::Destructor, nullptr));
+  CHECK_NAPI_RESULT(napi_wrap(env, _this, batch, Batch::Destructor, nullptr, nullptr));
   CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
 }
 

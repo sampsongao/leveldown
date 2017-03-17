@@ -151,7 +151,7 @@ void Database::Init (napi_env env) {
   CHECK_NAPI_RESULT(napi_create_reference(env, ctor, 1, &database_constructor));
 }
 
-void Database::Destructor (void* obj) {
+void Database::Destructor (void* obj, void* hint) {
   Database* db = static_cast<Database*>(obj);
   delete db;
 }
@@ -164,7 +164,7 @@ NAPI_METHOD(Database::New) {
 
   Database* obj = new Database(env, args[0]);
 
-  CHECK_NAPI_RESULT(napi_wrap(env, _this, obj, Database::Destructor, nullptr));
+  CHECK_NAPI_RESULT(napi_wrap(env, _this, obj, Database::Destructor, nullptr, nullptr));
   CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
 }
 
@@ -265,12 +265,10 @@ NAPI_METHOD(Database::Close) {
         CHECK_NAPI_RESULT(napi_get_reference_value(env, iterator->handle, &iteratorHandle));
         if (iteratorHandle != nullptr) {
           if (!iterator->ended) {
-            napi_propertyname pnEnd;
-            CHECK_NAPI_RESULT(napi_property_name(env, "end", &pnEnd));
             napi_value end;
-            CHECK_NAPI_RESULT(napi_get_property(env, iteratorHandle, pnEnd, &end));
+            CHECK_NAPI_RESULT(napi_get_named_property(env, iteratorHandle, "end", &end));
             napi_value emptyFn;
-            CHECK_NAPI_RESULT(napi_create_function(env, EmptyMethod, nullptr, &emptyFn));
+            CHECK_NAPI_RESULT(napi_create_function(env, "end", EmptyMethod, nullptr, &emptyFn));
             napi_value argv [] = {
                 emptyFn // empty callback
             };
@@ -411,14 +409,10 @@ NAPI_METHOD(Database::Batch) {
     if (t != napi_object)
       continue;
 
-    napi_propertyname keyName;
-    CHECK_NAPI_RESULT(napi_property_name(env, "key", &keyName));
     napi_value keyBuffer;
-    CHECK_NAPI_RESULT(napi_get_property(env, obj, keyName, &keyBuffer));
-    napi_propertyname typeName;
-    CHECK_NAPI_RESULT(napi_property_name(env, "type", &typeName));
+    CHECK_NAPI_RESULT(napi_get_named_property(env, obj, "key", &keyBuffer));
     napi_value type;
-    CHECK_NAPI_RESULT(napi_get_property(env, obj, typeName, &type));
+    CHECK_NAPI_RESULT(napi_get_named_property(env, obj, "type", &type));
     napi_value delStr;
     CHECK_NAPI_RESULT(napi_create_string_utf8(env, "del", (int)strlen("del"), &delStr));
     bool r;
@@ -438,10 +432,8 @@ NAPI_METHOD(Database::Batch) {
       CHECK_NAPI_RESULT(napi_strict_equals(env, type, putStr, &r));
 
       if (r) {
-        napi_propertyname valueName;
-        CHECK_NAPI_RESULT(napi_property_name(env, "value", &valueName));
         napi_value valueBuffer;
-        CHECK_NAPI_RESULT(napi_get_property(env, obj, valueName, &valueBuffer));
+        CHECK_NAPI_RESULT(napi_get_named_property(env, obj, "value", &valueBuffer));
 
         LD_STRING_OR_BUFFER_TO_SLICE(key, keyBuffer, key)
         LD_STRING_OR_BUFFER_TO_SLICE(value, valueBuffer, value)

@@ -70,7 +70,7 @@ static inline void DisposeStringOrBufferFromSlice(
       }                                                                                     \
       if (result) {                                                                         \
         CHECK_NAPI_RESULT(napi_get_buffer_info(                                             \
-          env, from ## Object_, &(to ##Ch_), &(to ## Sz_)));                                \
+          env, from ## Object_, (void**)&(to ##Ch_), &(to ## Sz_)));                        \
       } else {                                                                              \
         napi_value to ## Str_;                                                              \
         CHECK_NAPI_RESULT(napi_coerce_to_string(env, from, &(to ## Str_)));                 \
@@ -102,7 +102,7 @@ static inline void DisposeStringOrBufferFromSlice(
       to ## Ch_ = new char[to ## Sz_];                                         \
       char* buf = nullptr;                                                     \
       CHECK_NAPI_RESULT(napi_get_buffer_info(                                  \
-        env, from ## Object_, &buf, nullptr));                                 \
+        env, from ## Object_, (void**)&buf, nullptr));                         \
       memcpy(to ## Ch_, buf, to ## Sz_);                                       \
     } else {                                                                   \
       napi_value to ## Str_;                                                   \

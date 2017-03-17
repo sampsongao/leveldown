@@ -409,14 +409,12 @@ NAPI_METHOD(Iterator::New) {
           optionsObj = args[2];
           reverse = BooleanOptionValue(env, optionsObj, "reverse");
 
-          napi_propertyname pnStart;
-          CHECK_NAPI_RESULT(napi_property_name(env, "start", &pnStart));
           napi_value valStart = nullptr;
           bool r;
-          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnStart, &r));
+          CHECK_NAPI_RESULT(napi_has_named_property(env, optionsObj, "start", &r));
 
           if (r) {
-              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnStart, &valStart));
+              CHECK_NAPI_RESULT(napi_get_named_property(env, optionsObj, "start", &valStart));
               CHECK_NAPI_RESULT(napi_is_buffer(env, valStart, &r));
               CHECK_NAPI_RESULT(napi_get_type_of_value(env, valStart, &t));
 
@@ -432,13 +430,11 @@ NAPI_METHOD(Iterator::New) {
               }
           }
 
-          napi_propertyname pnEnd;
-          CHECK_NAPI_RESULT(napi_property_name(env, "end", &pnEnd));
           napi_value valEnd = nullptr;
-          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnEnd, &r));
+          CHECK_NAPI_RESULT(napi_has_named_property(env, optionsObj, "end", &r));
 
           if (r) {
-              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnEnd, &valEnd));
+              CHECK_NAPI_RESULT(napi_get_named_property(env, optionsObj, "end", &valEnd));
               CHECK_NAPI_RESULT(napi_is_buffer(env, valEnd, &r));
               CHECK_NAPI_RESULT(napi_get_type_of_value(env, valEnd, &t));
 
@@ -455,35 +451,29 @@ NAPI_METHOD(Iterator::New) {
           }
 
           int64_t i64;
-          napi_propertyname pnLimit;
-          CHECK_NAPI_RESULT(napi_property_name(env, "limit", &pnLimit));
-          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnLimit, &r));
+          CHECK_NAPI_RESULT(napi_has_named_property(env, optionsObj, "limit", &r));
 
           if (r) {
               napi_value valLimit;
-              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnLimit, &valLimit));
+              CHECK_NAPI_RESULT(napi_get_named_property(env, optionsObj, "limit", &valLimit));
               CHECK_NAPI_RESULT(napi_get_value_int64(env, valLimit, &i64));
               // TODO: is this truncated?
               limit = i64;
           }
 
-          napi_propertyname pnHighWaterMark;
-          CHECK_NAPI_RESULT(napi_property_name(env, "highWaterMark", &pnHighWaterMark));
-          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnHighWaterMark, &r));
+          CHECK_NAPI_RESULT(napi_has_named_property(env, optionsObj, "highWaterMark", &r));
           if (r) {
               napi_value valHighWaterMark;
-              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnHighWaterMark, &valHighWaterMark));
+              CHECK_NAPI_RESULT(napi_get_named_property(env, optionsObj, "highWaterMark", &valHighWaterMark));
               CHECK_NAPI_RESULT(napi_get_value_int64(env, valHighWaterMark, &i64));
               // TODO: is this truncated?
               highWaterMark = i64;
           }
 
-          napi_propertyname pnLt;
-          CHECK_NAPI_RESULT(napi_property_name(env, "lt", &pnLt));
-          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnLt, &r));
+          CHECK_NAPI_RESULT(napi_has_named_property(env, optionsObj, "lt", &r));
           if (r) {
               napi_value valLt = nullptr;
-              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnLt, &valLt));
+              CHECK_NAPI_RESULT(napi_get_named_property(env, optionsObj, "lt", &valLt));
               CHECK_NAPI_RESULT(napi_is_buffer(env, valLt, &r));
               CHECK_NAPI_RESULT(napi_get_type_of_value(env, valLt, &t));
 
@@ -508,12 +498,10 @@ NAPI_METHOD(Iterator::New) {
               }
           }
 
-          napi_propertyname pnLte;
-          CHECK_NAPI_RESULT(napi_property_name(env, "lte", &pnLte));
-          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnLte, &r));
+          CHECK_NAPI_RESULT(napi_has_named_property(env, optionsObj, "lte", &r));
           if (r) {
               napi_value valLte = nullptr;
-              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnLte, &valLte));
+              CHECK_NAPI_RESULT(napi_get_named_property(env, optionsObj, "lte", &valLte));
               CHECK_NAPI_RESULT(napi_is_buffer(env, valLte, &r));
               CHECK_NAPI_RESULT(napi_get_type_of_value(env, valLte, &t));
 
@@ -538,12 +526,10 @@ NAPI_METHOD(Iterator::New) {
               }
           }
 
-          napi_propertyname pnGt;
-          CHECK_NAPI_RESULT(napi_property_name(env, "gt", &pnGt));
-          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnGt, &r));
+          CHECK_NAPI_RESULT(napi_has_named_property(env, optionsObj, "gt", &r));
           if (r) {
               napi_value valGt = nullptr;
-              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnGt, &valGt));
+              CHECK_NAPI_RESULT(napi_get_named_property(env, optionsObj, "gt", &valGt));
               CHECK_NAPI_RESULT(napi_is_buffer(env, valGt, &r));
               CHECK_NAPI_RESULT(napi_get_type_of_value(env, valGt, &t));
 
@@ -568,12 +554,10 @@ NAPI_METHOD(Iterator::New) {
               }
           }
 
-          napi_propertyname pnGte;
-          CHECK_NAPI_RESULT(napi_property_name(env, "gte", &pnGte));
-          CHECK_NAPI_RESULT(napi_has_property(env, optionsObj, pnGte, &r));
+          CHECK_NAPI_RESULT(napi_has_named_property(env, optionsObj, "gte", &r));
           if (r) {
               napi_value valGte = nullptr;
-              CHECK_NAPI_RESULT(napi_get_property(env, optionsObj, pnGte, &valGte));
+              CHECK_NAPI_RESULT(napi_get_named_property(env, optionsObj, "gte", &valGte));
               CHECK_NAPI_RESULT(napi_is_buffer(env, valGte, &r));
               CHECK_NAPI_RESULT(napi_get_type_of_value(env, valGte, &t));
 
@@ -631,11 +615,12 @@ NAPI_METHOD(Iterator::New) {
   napi_value _this;
   CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
 
-  CHECK_NAPI_RESULT(napi_wrap(env, _this, iterator, Iterator::Destructor, &iterator->handle));
+  CHECK_NAPI_RESULT(napi_wrap(
+    env, _this, iterator, Iterator::Destructor, nullptr, &iterator->handle));
   CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
 }
 
-void Iterator::Destructor(void* obj) {
+void Iterator::Destructor(void* obj, void* hint) {
   Iterator* iterator = static_cast<Iterator*>(obj);
   delete iterator;
 }

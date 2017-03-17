@@ -86,7 +86,7 @@ private:
   bool Read (std::string& key, std::string& value);
   bool GetIterator ();
 
-  static void Destructor(void* obj);
+  static void Destructor(void* obj, void* hint);
 
   static NAPI_METHOD(New);
   static NAPI_METHOD(Seek);

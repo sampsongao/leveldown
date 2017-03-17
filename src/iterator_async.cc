@@ -33,10 +33,9 @@ void NextWorker::Execute () {
 }
 
 void NextWorker::OnOK () {
-  Napi::HandleScope scope(Env());
+  napi_env env = Env();
+  Napi::HandleScope scope(env);
   size_t idx = 0;
-  napi_env env;
-  CHECK_NAPI_RESULT(napi_get_current_env(&env));
 
   size_t arraySize = result.size() * 2;
   napi_value returnArray;

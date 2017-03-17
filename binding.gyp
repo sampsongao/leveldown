@@ -23,9 +23,10 @@
         ]
       , "dependencies": [
             "<(module_root_dir)/deps/leveldb/leveldb.gyp:leveldb"
+          , "<!(node -p \"require('node-api').gyp\")"
         ]
       , "include_dirs"  : [
-            "<!(node -e \"require('napi')\")"
+            "<!(node -p \"require('node-api').include\")"
         ]
       , "sources": [
             "src/batch.cc"
