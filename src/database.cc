@@ -364,24 +364,22 @@ NAPI_METHOD(Database::Delete) {
 
 NAPI_METHOD(Database::Batch) {
   {
+    size_t argc = 1;
     napi_value args[1];
-    CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
-    int argsLength;
-    CHECK_NAPI_RESULT(napi_get_cb_args_length(env, info, &argsLength));
-    if (argsLength == 0 || argsLength == 1) {
+    napi_value _this;
+    CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, &_this, nullptr));
+    if (argc == 0 || argc == 1) {
       bool isArray;
       CHECK_NAPI_RESULT(napi_is_array(env, args[0], &isArray));
       if (!isArray) {
         napi_value optionsObj = nullptr;
-        if (argsLength > 0) {
+        if (argc > 0) {
           napi_valuetype t;
-          CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[0], &t));
+          CHECK_NAPI_RESULT(napi_typeof(env, args[0], &t));
           if (t == napi_object) {
             optionsObj = args[0];
           }
         }
-        napi_value _this;
-        CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
         CHECK_NAPI_RESULT(napi_set_return_value(env, info, Batch::NewInstance(env, _this, optionsObj)));
         return;
       }
@@ -405,7 +403,7 @@ NAPI_METHOD(Database::Batch) {
     CHECK_NAPI_RESULT(napi_get_element(env, array, i, &obj));
 
     napi_valuetype t;
-    CHECK_NAPI_RESULT(napi_get_type_of_value(env, obj, &t));
+    CHECK_NAPI_RESULT(napi_typeof(env, obj, &t));
     if (t != napi_object)
       continue;
 
@@ -414,7 +412,7 @@ NAPI_METHOD(Database::Batch) {
     napi_value type;
     CHECK_NAPI_RESULT(napi_get_named_property(env, obj, "type", &type));
     napi_value delStr;
-    CHECK_NAPI_RESULT(napi_create_string_utf8(env, "del", (int)strlen("del"), &delStr));
+    CHECK_NAPI_RESULT(napi_create_string_utf8(env, "del", strlen("del"), &delStr));
     bool r;
     CHECK_NAPI_RESULT(napi_strict_equals(env, type, delStr, &r));
 
@@ -428,7 +426,7 @@ NAPI_METHOD(Database::Batch) {
       DisposeStringOrBufferFromSlice(env, keyBuffer, key);
     } else {
       napi_value putStr;
-      CHECK_NAPI_RESULT(napi_create_string_utf8(env, "put", (int)strlen("put"), &putStr));
+      CHECK_NAPI_RESULT(napi_create_string_utf8(env, "put", strlen("put"), &putStr));
       CHECK_NAPI_RESULT(napi_strict_equals(env, type, putStr, &r));
 
       if (r) {
@@ -514,12 +512,10 @@ NAPI_METHOD(Database::GetProperty) {
 }
 
 NAPI_METHOD(Database::Iterator) {
+  size_t argc = 1;
   napi_value args[1];
-  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
-  int argsLength;
-  CHECK_NAPI_RESULT(napi_get_cb_args_length(env, info, &argsLength));
   napi_value _this;
-  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, &_this, nullptr));
 
   void* unwrapped;
   CHECK_NAPI_RESULT(napi_unwrap(env, _this, &unwrapped));
@@ -527,9 +523,9 @@ NAPI_METHOD(Database::Iterator) {
       static_cast<leveldown::Database*>(unwrapped);
 
   napi_value optionsObj = nullptr;
-  if (argsLength > 0) {
+  if (argc > 0) {
     napi_valuetype t;
-    CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[0], &t));
+    CHECK_NAPI_RESULT(napi_typeof(env, args[0], &t));
 
     if (t == napi_object) {
       optionsObj = args[0];

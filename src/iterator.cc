@@ -219,10 +219,10 @@ void checkEndCallback (Iterator* iterator) {
 }
 
 NAPI_METHOD(Iterator::Seek) {
+  size_t argc = 1;
   napi_value args[1];
-  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
   napi_value _this;
-  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, &_this, nullptr));
   void* unwrapped;
   CHECK_NAPI_RESULT(napi_unwrap(env, _this, &unwrapped));
   Iterator* iterator = static_cast<Iterator*>(unwrapped);
@@ -258,22 +258,20 @@ NAPI_METHOD(Iterator::Seek) {
     }
   }
 
-  napi_value holder;
-  CHECK_NAPI_RESULT(napi_get_cb_holder(env, info, &holder));
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, holder));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
 }
 
 NAPI_METHOD(Iterator::Next) {
+  size_t argc = 1;
   napi_value args[1];
-  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
   napi_value _this;
-  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, &_this, nullptr));
   void* unwrapped;
   CHECK_NAPI_RESULT(napi_unwrap(env, _this, &unwrapped));
   Iterator* iterator = static_cast<Iterator*>(unwrapped);
 
   napi_valuetype t;
-  CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[0], &t));
+  CHECK_NAPI_RESULT(napi_typeof(env, args[0], &t));
   if (t != napi_function) {
     CHECK_NAPI_RESULT(napi_throw_error(env, "next() requires a callback argument"));
     return;
@@ -292,21 +290,19 @@ NAPI_METHOD(Iterator::Next) {
   iterator->nexting = true;
   worker->Queue();
 
-  napi_value holder;
-  CHECK_NAPI_RESULT(napi_get_cb_holder(env, info, &holder));
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, holder));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
 }
 
 NAPI_METHOD(Iterator::End) {
+  size_t argc = 1;
   napi_value args[1];
-  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
   napi_value _this;
-  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, &_this, nullptr));
   void* unwrapped;
   CHECK_NAPI_RESULT(napi_unwrap(env, _this, &unwrapped));
   Iterator* iterator = static_cast<Iterator*>(unwrapped);
   napi_valuetype t;
-  CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[0], &t));
+  CHECK_NAPI_RESULT(napi_typeof(env, args[0], &t));
   if (t != napi_function) {
       CHECK_NAPI_RESULT(napi_throw_error(env, "end() requires a callback argument"));
       return;
@@ -332,9 +328,7 @@ NAPI_METHOD(Iterator::End) {
     }
   }
 
-  napi_value holder;
-  CHECK_NAPI_RESULT(napi_get_cb_holder(env, info, &holder));
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, holder));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
 }
 
 void Iterator::Init (napi_env env) {
@@ -374,10 +368,10 @@ napi_value Iterator::NewInstance (
 }
 
 NAPI_METHOD(Iterator::New) {
+  size_t argc = 3;
   napi_value args[3];
-  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 3));
-  int argsLength;
-  CHECK_NAPI_RESULT(napi_get_cb_args_length(env, info, &argsLength));
+  napi_value _this;
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, &_this, nullptr));
   void* unwrapped;
   CHECK_NAPI_RESULT(napi_unwrap(env, args[0], &unwrapped));
   Database* database = static_cast<Database*>(unwrapped);
@@ -401,9 +395,9 @@ NAPI_METHOD(Iterator::New) {
   //default to forward.
   bool reverse = false;
 
-  if (argsLength > 1) {
+  if (argc > 1) {
       napi_valuetype t;
-      CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[2], &t));
+      CHECK_NAPI_RESULT(napi_typeof(env, args[2], &t));
 
       if (t == napi_object) {
           optionsObj = args[2];
@@ -416,7 +410,7 @@ NAPI_METHOD(Iterator::New) {
           if (r) {
               CHECK_NAPI_RESULT(napi_get_named_property(env, optionsObj, "start", &valStart));
               CHECK_NAPI_RESULT(napi_is_buffer(env, valStart, &r));
-              CHECK_NAPI_RESULT(napi_get_type_of_value(env, valStart, &t));
+              CHECK_NAPI_RESULT(napi_typeof(env, valStart, &t));
 
               if (r || t == napi_string) {
                   napi_value startBuffer = valStart;
@@ -436,7 +430,7 @@ NAPI_METHOD(Iterator::New) {
           if (r) {
               CHECK_NAPI_RESULT(napi_get_named_property(env, optionsObj, "end", &valEnd));
               CHECK_NAPI_RESULT(napi_is_buffer(env, valEnd, &r));
-              CHECK_NAPI_RESULT(napi_get_type_of_value(env, valEnd, &t));
+              CHECK_NAPI_RESULT(napi_typeof(env, valEnd, &t));
 
               if (r || t == napi_string) {
                   napi_value endBuffer = valEnd;
@@ -475,7 +469,7 @@ NAPI_METHOD(Iterator::New) {
               napi_value valLt = nullptr;
               CHECK_NAPI_RESULT(napi_get_named_property(env, optionsObj, "lt", &valLt));
               CHECK_NAPI_RESULT(napi_is_buffer(env, valLt, &r));
-              CHECK_NAPI_RESULT(napi_get_type_of_value(env, valLt, &t));
+              CHECK_NAPI_RESULT(napi_typeof(env, valLt, &t));
 
               if (r || t == napi_string) {
                   napi_value ltBuffer = valLt;
@@ -503,7 +497,7 @@ NAPI_METHOD(Iterator::New) {
               napi_value valLte = nullptr;
               CHECK_NAPI_RESULT(napi_get_named_property(env, optionsObj, "lte", &valLte));
               CHECK_NAPI_RESULT(napi_is_buffer(env, valLte, &r));
-              CHECK_NAPI_RESULT(napi_get_type_of_value(env, valLte, &t));
+              CHECK_NAPI_RESULT(napi_typeof(env, valLte, &t));
 
               if (r || t == napi_string) {
                   napi_value lteBuffer = valLte;
@@ -531,7 +525,7 @@ NAPI_METHOD(Iterator::New) {
               napi_value valGt = nullptr;
               CHECK_NAPI_RESULT(napi_get_named_property(env, optionsObj, "gt", &valGt));
               CHECK_NAPI_RESULT(napi_is_buffer(env, valGt, &r));
-              CHECK_NAPI_RESULT(napi_get_type_of_value(env, valGt, &t));
+              CHECK_NAPI_RESULT(napi_typeof(env, valGt, &t));
 
               if (r || t == napi_string) {
                   napi_value gtBuffer = valGt;
@@ -559,7 +553,7 @@ NAPI_METHOD(Iterator::New) {
               napi_value valGte = nullptr;
               CHECK_NAPI_RESULT(napi_get_named_property(env, optionsObj, "gte", &valGte));
               CHECK_NAPI_RESULT(napi_is_buffer(env, valGte, &r));
-              CHECK_NAPI_RESULT(napi_get_type_of_value(env, valGte, &t));
+              CHECK_NAPI_RESULT(napi_typeof(env, valGte, &t));
 
               if (r || t == napi_string) {
                   napi_value gteBuffer = valGte;
@@ -611,9 +605,6 @@ NAPI_METHOD(Iterator::New) {
     , valueAsBuffer
     , highWaterMark
   );
-
-  napi_value _this;
-  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
 
   CHECK_NAPI_RESULT(napi_wrap(
     env, _this, iterator, Iterator::Destructor, nullptr, &iterator->handle));

@@ -44,13 +44,10 @@ void Batch::Init (napi_env env) {
 }
 
 NAPI_METHOD(Batch::New) {
+  size_t argc = 2;
   napi_value args[2];
-
-  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 2));
-  int argsLength;
-  CHECK_NAPI_RESULT(napi_get_cb_args_length(env, info, &argsLength));
   napi_value _this;
-  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, &_this, nullptr));
 
   void* unwrapped;
   CHECK_NAPI_RESULT(napi_unwrap(env, args[0], &unwrapped));
@@ -58,9 +55,9 @@ NAPI_METHOD(Batch::New) {
   napi_value optionsObj = nullptr;
 
   napi_valuetype t;
-  CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[1], &t));
+  CHECK_NAPI_RESULT(napi_typeof(env, args[1], &t));
 
-  if (argsLength > 1 && t == napi_object) {
+  if (argc > 1 && t == napi_object) {
     optionsObj = args[1];
   }
 
@@ -97,13 +94,13 @@ napi_value Batch::NewInstance (
 }
 
 NAPI_METHOD(Batch::Put) {
+  size_t argc = 2;
   napi_value args[2];
-  napi_get_cb_args(env, info, args, 2);
-  napi_value holder;
-  CHECK_NAPI_RESULT(napi_get_cb_holder(env, info, &holder));
+  napi_value _this;
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, &_this, nullptr));
 
   void* wrapped;
-  CHECK_NAPI_RESULT(napi_unwrap(env, holder, &wrapped));
+  CHECK_NAPI_RESULT(napi_unwrap(env, _this, &wrapped));
   Batch* batch = static_cast<Batch*>(wrapped);
 
   napi_value keyBuffer = args[0];
@@ -118,16 +115,16 @@ NAPI_METHOD(Batch::Put) {
   DisposeStringOrBufferFromSlice(env, keyBuffer, key);
   DisposeStringOrBufferFromSlice(env, valueBuffer, value);
 
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, holder));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
 }
 
 NAPI_METHOD(Batch::Del) {
+  size_t argc = 1;
   napi_value args[1];
-  napi_get_cb_args(env, info, args, 1);
-  napi_value holder;
-  CHECK_NAPI_RESULT(napi_get_cb_holder(env, info, &holder));
+  napi_value _this;
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, &_this, nullptr));
   void* unwrapped;
-  CHECK_NAPI_RESULT(napi_unwrap(env, holder, &unwrapped));
+  CHECK_NAPI_RESULT(napi_unwrap(env, _this, &unwrapped));
   Batch* batch = static_cast<Batch*>(unwrapped);
 
   napi_value keyBuffer = args[0];
@@ -139,31 +136,29 @@ NAPI_METHOD(Batch::Del) {
 
   DisposeStringOrBufferFromSlice(env, keyBuffer, key);
 
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, holder));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
 }
 
 NAPI_METHOD(Batch::Clear) {
-  napi_value holder;
-  CHECK_NAPI_RESULT(napi_get_cb_holder(env, info, &holder));
+  napi_value _this;
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, nullptr, nullptr, &_this, nullptr));
   void* unwrapped;
-  CHECK_NAPI_RESULT(napi_unwrap(env, holder, &unwrapped));
+  CHECK_NAPI_RESULT(napi_unwrap(env, _this, &unwrapped));
   Batch* batch = static_cast<Batch*>(unwrapped);
 
   batch->batch->Clear();
   batch->hasData = false;
 
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, holder));
+  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
 }
 
 NAPI_METHOD(Batch::Write) {
+  size_t argc = 1;
   napi_value args[1];
-  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
   napi_value _this;
-  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
-  napi_value holder;
-  CHECK_NAPI_RESULT(napi_get_cb_holder(env, info, &holder));
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, &_this, nullptr));
   void* unwrapped;
-  CHECK_NAPI_RESULT(napi_unwrap(env, holder, &unwrapped));
+  CHECK_NAPI_RESULT(napi_unwrap(env, _this, &unwrapped));
   Batch* batch = static_cast<Batch*>(unwrapped);
 
   if (batch->hasData) {

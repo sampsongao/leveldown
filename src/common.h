@@ -45,7 +45,7 @@ inline uint32_t UInt32OptionValue(napi_env env,
       napi_value v;
       CHECK_NAPI_RESULT(napi_get_named_property(env, options, key, &v));
       napi_valuetype t;
-      CHECK_NAPI_RESULT(napi_get_type_of_value(env, v, &t));
+      CHECK_NAPI_RESULT(napi_typeof(env, v, &t));
 
       if (t == napi_number) {
         uint32_t u;

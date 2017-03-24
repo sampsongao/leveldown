@@ -49,7 +49,8 @@ void NextWorker::OnOK () {
     napi_value returnKey;
     if (iterator->keyAsBuffer) {
       //TODO: use NewBuffer, see database_async.cc
-      CHECK_NAPI_RESULT(napi_create_buffer_copy(env, key.data(), key.size(), &returnKey));
+      CHECK_NAPI_RESULT(napi_create_buffer_copy(
+        env, key.size(), key.data(), nullptr, &returnKey));
     } else {
       CHECK_NAPI_RESULT(napi_create_string_utf8(env, (char*)key.data(), key.size(), &returnKey));
     }
@@ -57,9 +58,11 @@ void NextWorker::OnOK () {
     napi_value returnValue;
     if (iterator->valueAsBuffer) {
       //TODO: use NewBuffer, see database_async.cc
-      CHECK_NAPI_RESULT(napi_create_buffer_copy(env, value.data(), value.size(), &returnValue));
+      CHECK_NAPI_RESULT(napi_create_buffer_copy(
+        env, value.size(), value.data(), nullptr, &returnValue));
     } else {
-      CHECK_NAPI_RESULT(napi_create_string_utf8(env, (char*)value.data(), value.size(), &returnValue));
+      CHECK_NAPI_RESULT(napi_create_string_utf8(
+        env, (char*)value.data(), value.size(), &returnValue));
     }
 
     // put the key & value in a descending order, so that they can be .pop:ed in javascript-land
@@ -73,7 +76,7 @@ void NextWorker::OnOK () {
   napi_value nullVal;
   CHECK_NAPI_RESULT(napi_get_null(env, &nullVal));
   napi_value boolVal;
-  CHECK_NAPI_RESULT(napi_create_boolean(env, !ok, &boolVal));
+  CHECK_NAPI_RESULT(napi_get_boolean(env, !ok, &boolVal));
 
   napi_value globalVal;
   CHECK_NAPI_RESULT(napi_get_global(Env(), &globalVal));

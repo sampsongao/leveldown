@@ -27,8 +27,8 @@ static inline size_t StringOrBufferLength(napi_env env, napi_value obj) {
     CHECK_NAPI_RESULT(napi_get_buffer_info(env, obj, nullptr, &sz));
   }
   else {
-    int result;
-    CHECK_NAPI_RESULT(napi_get_value_string_utf8_length(env, obj, &result));
+    size_t length;
+    CHECK_NAPI_RESULT(napi_get_value_string_utf8(env, obj, nullptr, 0, &length));
     sz = result;
   }
 
@@ -57,7 +57,7 @@ static inline void DisposeStringOrBufferFromSlice(
   char* to ## Ch_;                                                                          \
   {                                                                                         \
     napi_valuetype from ## Type_;                                                           \
-    CHECK_NAPI_RESULT(napi_get_type_of_value(env, from, &(from ## Type_)));                 \
+    CHECK_NAPI_RESULT(napi_typeof(env, from, &(from ## Type_)));                 \
     if (from ## Type_ == napi_null || from ## Type_ == napi_undefined) {                    \
       to ## Sz_ = 0;                                                                        \
       to ## Ch_ = 0;                                                                        \
@@ -74,11 +74,11 @@ static inline void DisposeStringOrBufferFromSlice(
       } else {                                                                              \
         napi_value to ## Str_;                                                              \
         CHECK_NAPI_RESULT(napi_coerce_to_string(env, from, &(to ## Str_)));                 \
-        int sz;                                                                             \
-        CHECK_NAPI_RESULT(napi_get_value_string_utf8_length(env, to ## Str_, &sz));         \
+        size_t sz;                                                                          \
+        CHECK_NAPI_RESULT(napi_get_value_string_utf8(env, to ## Str_, nullptr, 0, &sz));    \
         to ## Sz_ = sz;                                                                     \
         to ## Ch_ = new char[to ## Sz_+1];                                                  \
-        int unused;                                                                         \
+        size_t unused;                                                                      \
         CHECK_NAPI_RESULT(                                                                  \
           napi_get_value_string_utf8(env, to ## Str_, to ## Ch_, to ## Sz_+1, &unused));    \
       }                                                                                     \
@@ -107,12 +107,12 @@ static inline void DisposeStringOrBufferFromSlice(
     } else {                                                                   \
       napi_value to ## Str_;                                                   \
       CHECK_NAPI_RESULT(napi_coerce_to_string(env, from, &(to ## Str_)));      \
-      int sz;                                                                  \
-      CHECK_NAPI_RESULT(napi_get_value_string_utf8_length(                     \
-        env, to ## Str_, &sz));                                                \
+      size_t sz;                                                               \
+      CHECK_NAPI_RESULT(napi_get_value_string_utf8(                            \
+        env, to ## Str_, nullptr, 0, &sz));                                    \
       to ## Sz_ = sz;                                                          \
       to ## Ch_ = new char[to ## Sz_+1];                                       \
-      int unused;                                                              \
+      size_t unused;                                                           \
       CHECK_NAPI_RESULT(napi_get_value_string_utf8(                            \
         env, to ## Str_, to ## Ch_, to ## Sz_+1, &unused));                    \
     }                                                                          \
@@ -122,7 +122,7 @@ static inline void DisposeStringOrBufferFromSlice(
 #define LD_RETURN_CALLBACK_OR_ERROR(callback, msg)                             \
   if (callback != nullptr) {                                                   \
     napi_valuetype t;                                                          \
-    CHECK_NAPI_RESULT(napi_get_type_of_value(env, callback, &t));              \
+    CHECK_NAPI_RESULT(napi_typeof(env, callback, &t));              \
     if (t == napi_function) {                                                  \
       napi_value str;                                                          \
       napi_value err;                                                          \
@@ -158,18 +158,16 @@ static inline void DisposeStringOrBufferFromSlice(
  */
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define LD_METHOD_SETUP_COMMON(name, optionPos, callbackPos)                   \
-  int argsLength;                                                              \
-  CHECK_NAPI_RESULT(napi_get_cb_args_length(env, info, &argsLength));          \
+  size_t argsLength = MAX(optionPos+1, callbackPos+1);                         \
+  napi_value args[MAX(optionPos+1, callbackPos+1)];                            \
+  napi_value _this;                                                            \
+  CHECK_NAPI_RESULT(                                                           \
+    napi_get_cb_info(env, info, &argsLength, args, &_this, nullptr));          \
   if (argsLength == 0) {                                                       \
     CHECK_NAPI_RESULT(                                                         \
       napi_throw_error(env, #name "() requires a callback argument"));         \
     return;                                                                    \
   }                                                                            \
-  napi_value args[MAX(optionPos+1, callbackPos+1)];                            \
-  CHECK_NAPI_RESULT(                                                           \
-    napi_get_cb_args(env, info, args, MAX(optionPos+1, callbackPos+1)));       \
-  napi_value _this;                                                            \
-  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));                      \
   void* unwrapped;                                                             \
   CHECK_NAPI_RESULT(napi_unwrap(env, _this, &unwrapped));                      \
   leveldown::Database* database =                                              \
@@ -178,19 +176,19 @@ static inline void DisposeStringOrBufferFromSlice(
   napi_value callback = nullptr;                                               \
   if (optionPos == -1) {                                                       \
     napi_valuetype t;                                                          \
-    CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[callbackPos], &t));     \
+    CHECK_NAPI_RESULT(napi_typeof(env, args[callbackPos], &t));                \
     if (t == napi_function) {                                                  \
       callback = args[callbackPos];                                            \
     }                                                                          \
   } else {                                                                     \
     napi_valuetype t;                                                          \
-    CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[callbackPos - 1], &t)); \
+    CHECK_NAPI_RESULT(napi_typeof(env, args[callbackPos - 1], &t));            \
     if (t == napi_function) {                                                  \
       callback = args[callbackPos - 1];                                        \
     } else {                                                                   \
-      CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[optionPos], &t));     \
+      CHECK_NAPI_RESULT(napi_typeof(env, args[optionPos], &t));                \
       if (t == napi_object) {                                                  \
-        CHECK_NAPI_RESULT(napi_get_type_of_value(env, args[callbackPos], &t)); \
+        CHECK_NAPI_RESULT(napi_typeof(env, args[callbackPos], &t)); \
         if (t == napi_function) {                                              \
           optionsObj = args[optionPos];                                        \
           callback = args[callbackPos];                                        \
