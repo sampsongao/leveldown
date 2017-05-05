@@ -25,7 +25,7 @@ protected:
   void SetStatus(leveldb::Status status) {
     this->status = status;
     if (!status.ok())
-      SetErrorMessage(status.ToString().c_str());
+      SetError(status.ToString());
   }
   Database* database;
 private:

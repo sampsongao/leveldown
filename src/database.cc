@@ -124,26 +124,26 @@ void Database::CloseDatabase () {
 
 /* V8 exposed functions *****************************/
 
-void LevelDOWN (napi_env env, napi_callback_info info) {
+napi_value LevelDOWN (napi_env env, napi_callback_info info) {
   napi_value args[1];
-  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
+  size_t argc = 1;
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, nullptr, nullptr));
 
   napi_value location = args[0];
-
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, Database::NewInstance(env, location)));
+  return Database::NewInstance(env, location);
 }
 
 void Database::Init (napi_env env) {
   napi_property_descriptor methods [] = {
-    { "open", Database::Open },
-    { "close", Database::Close },
-    { "put", Database::Put },
-    { "get", Database::Get },
-    { "del", Database::Delete },
-    { "batch", Database::Batch },
-    { "approximateSize", Database::ApproximateSize },
-    { "getProperty", Database::GetProperty },
-    { "iterator", Database::Iterator },
+    { "open", nullptr, Database::Open },
+    { "close", nullptr, Database::Close },
+    { "put", nullptr, Database::Put },
+    { "get", nullptr, Database::Get },
+    { "del", nullptr, Database::Delete },
+    { "batch", nullptr, Database::Batch },
+    { "approximateSize", nullptr, Database::ApproximateSize },
+    { "getProperty", nullptr, Database::GetProperty },
+    { "iterator", nullptr, Database::Iterator },
   };
 
   napi_value ctor;
@@ -151,21 +151,21 @@ void Database::Init (napi_env env) {
   CHECK_NAPI_RESULT(napi_create_reference(env, ctor, 1, &database_constructor));
 }
 
-void Database::Destructor (void* obj, void* hint) {
+void Database::Destructor(napi_env env, void* obj, void* hint) {
   Database* db = static_cast<Database*>(obj);
   delete db;
 }
 
 NAPI_METHOD(Database::New) {
+  size_t argc = 1;
   napi_value args[1];
-  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
   napi_value _this;
-  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, &_this, nullptr));
 
   Database* obj = new Database(env, args[0]);
 
   CHECK_NAPI_RESULT(napi_wrap(env, _this, obj, Database::Destructor, nullptr, nullptr));
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
+  return _this;
 }
 
 napi_value Database::NewInstance (napi_env env, napi_value location) {
@@ -222,12 +222,15 @@ NAPI_METHOD(Database::Open) {
     , blockRestartInterval
   );
   // persist to prevent accidental GC
-  worker->Persistent().Set("database", _this);
+  worker->Receiver().Set("database", _this);
   worker->Queue();
+
+  return nullptr;
 }
 
 // for an empty callback to iterator.end()
 NAPI_METHOD(EmptyMethod) {
+  return nullptr;
 }
 
 NAPI_METHOD(Database::Close) {
@@ -239,7 +242,7 @@ NAPI_METHOD(Database::Close) {
     , callback
   );
   // persist to prevent accidental GC
-  worker->Persistent().Set("database", _this);
+  worker->Receiver().Set("database", _this);
 
   if (!database->iterators.empty()) {
     // yikes, we still have iterators open! naughty naughty.
@@ -290,6 +293,8 @@ NAPI_METHOD(Database::Close) {
   } else {
     worker->Queue();
   }
+
+  return nullptr;
 }
 
 NAPI_METHOD(Database::Put) {
@@ -314,8 +319,9 @@ NAPI_METHOD(Database::Put) {
   );
 
   // persist to prevent accidental GC
-  worker->Persistent().Set("database", _this);
+  worker->Receiver().Set("database", _this);
   worker->Queue();
+  return nullptr;
 }
 
 NAPI_METHOD(Database::Get) {
@@ -337,8 +343,9 @@ NAPI_METHOD(Database::Get) {
     , keyHandle
   );
   // persist to prevent accidental GC
-  worker->Persistent().Set("database", _this);
+  worker->Receiver().Set("database", _this);
   worker->Queue();
+  return nullptr;
 }
 
 NAPI_METHOD(Database::Delete) {
@@ -358,8 +365,9 @@ NAPI_METHOD(Database::Delete) {
     , keyHandle
   );
   // persist to prevent accidental GC
-  worker->Persistent().Set("database", _this);
+  worker->Receiver().Set("database", _this);
   worker->Queue();
+  return nullptr;
 }
 
 NAPI_METHOD(Database::Batch) {
@@ -369,8 +377,10 @@ NAPI_METHOD(Database::Batch) {
     napi_value _this;
     CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, &_this, nullptr));
     if (argc == 0 || argc == 1) {
-      bool isArray;
-      CHECK_NAPI_RESULT(napi_is_array(env, args[0], &isArray));
+      bool isArray = false;
+      if (argc > 0) {
+        CHECK_NAPI_RESULT(napi_is_array(env, args[0], &isArray));
+      }
       if (!isArray) {
         napi_value optionsObj = nullptr;
         if (argc > 0) {
@@ -380,8 +390,7 @@ NAPI_METHOD(Database::Batch) {
             optionsObj = args[0];
           }
         }
-        CHECK_NAPI_RESULT(napi_set_return_value(env, info, Batch::NewInstance(env, _this, optionsObj)));
-        return;
+        return Batch::NewInstance(env, _this, optionsObj);
       }
     }
   }
@@ -455,11 +464,12 @@ NAPI_METHOD(Database::Batch) {
       , sync
     );
     // persist to prevent accidental GC
-    worker->Persistent().Set("database", _this);
+    worker->Receiver().Set("database", _this);
     worker->Queue();
   } else {
     LD_RUN_CALLBACK(callback, 0, NULL);
   }
+  return nullptr;
 }
 
 NAPI_METHOD(Database::ApproximateSize) {
@@ -481,15 +491,16 @@ NAPI_METHOD(Database::ApproximateSize) {
     , endHandle
   );
   // persist to prevent accidental GC
-  worker->Persistent().Set("database", _this);
+  worker->Receiver().Set("database", _this);
   worker->Queue();
+  return nullptr;
 }
 
 NAPI_METHOD(Database::GetProperty) {
+  size_t argc = 1;
   napi_value args[1];
-  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 1));
   napi_value _this;
-  CHECK_NAPI_RESULT(napi_get_cb_this(env, info, &_this));
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, &_this, nullptr));
 
   napi_value propertyHandle = args[0];
 
@@ -508,7 +519,7 @@ NAPI_METHOD(Database::GetProperty) {
   delete value;
   delete[] property.data();
 
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, returnValue));
+  return returnValue;
 }
 
 NAPI_METHOD(Database::Iterator) {
@@ -559,6 +570,6 @@ NAPI_METHOD(Database::Iterator) {
 
   database->iterators[id] = iterator;
 
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, iteratorHandle));
+  return iteratorHandle;
 }
 } // namespace leveldown

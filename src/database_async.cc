@@ -69,12 +69,6 @@ void CloseWorker::Execute () {
   database->CloseDatabase();
 }
 
-void CloseWorker::WorkComplete () {
-  Napi::HandleScope scope(Env());
-  OnOK();
-  _callback.Reset();
-}
-
 /** IO WORKER (abstract) **/
 
 IOWorker::IOWorker (
@@ -88,16 +82,13 @@ IOWorker::IOWorker (
 {
   Napi::HandleScope scope(env);
 
-  _persistent.Set("key", keyHandle);
+  Receiver().Set("key", keyHandle);
 };
 
-IOWorker::~IOWorker () {}
-
-void IOWorker::WorkComplete () {
+IOWorker::~IOWorker () {
   Napi::HandleScope scope(Env());
 
-  DisposeStringOrBufferFromSlice(Env(), _persistent.Get("key"), key);
-  AsyncWorker::WorkComplete();
+  DisposeStringOrBufferFromSlice(Env(), Receiver().Get("key"), key);
 }
 
 /** READ WORKER **/
@@ -117,7 +108,7 @@ ReadWorker::ReadWorker (
 
   options = new leveldb::ReadOptions();
   options->fill_cache = fillCache;
-  _persistent.Set("key", keyHandle);
+  Receiver().Set("key", keyHandle);
 };
 
 ReadWorker::~ReadWorker () {
@@ -149,7 +140,7 @@ void ReadWorker::OnOK () {
   napi_value globalVal;
   CHECK_NAPI_RESULT(napi_get_global(Env(), &globalVal));
 
-  _callback.Call(globalVal, {
+  Callback().Call(globalVal, {
     nullVal,
     returnValue,
   });
@@ -170,7 +161,7 @@ DeleteWorker::DeleteWorker (
 
   options = new leveldb::WriteOptions();
   options->sync = sync;
-  _persistent.Set("key", keyHandle);
+  Receiver().Set("key", keyHandle);
 };
 
 DeleteWorker::~DeleteWorker () {
@@ -197,20 +188,17 @@ WriteWorker::WriteWorker (
 {
   Napi::HandleScope scope(env);
 
-  _persistent.Set("value", valueHandle);
+  Receiver().Set("value", valueHandle);
 };
 
-WriteWorker::~WriteWorker () { }
+WriteWorker::~WriteWorker () {
+  Napi::HandleScope scope(Env());
+
+  DisposeStringOrBufferFromSlice(Env(), Receiver().Get("value"), value);
+}
 
 void WriteWorker::Execute () {
   SetStatus(database->PutToDatabase(options, key, value));
-}
-
-void WriteWorker::WorkComplete () {
-  Napi::HandleScope scope(Env());
-
-  DisposeStringOrBufferFromSlice(Env(), _persistent.Get("value"), value);
-  IOWorker::WorkComplete();
 }
 
 /** BATCH WORKER **/
@@ -250,24 +238,19 @@ ApproximateSizeWorker::ApproximateSizeWorker (
 ) : AsyncWorker(database, env, callback)
   , range(start, end)
 {
-  Napi::HandleScope scope(env);
-
-  _persistent.Set("start", startHandle);
-  _persistent.Set("end", endHandle);
+  Receiver().Set("start", startHandle);
+  Receiver().Set("end", endHandle);
 };
 
-ApproximateSizeWorker::~ApproximateSizeWorker () {}
+ApproximateSizeWorker::~ApproximateSizeWorker () {
+  Napi::HandleScope scope(Env());
+
+  DisposeStringOrBufferFromSlice(Env(), Receiver().Get("start"), range.start);
+  DisposeStringOrBufferFromSlice(Env(), Receiver().Get("end"), range.limit);
+}
 
 void ApproximateSizeWorker::Execute () {
   size = database->ApproximateSizeFromDatabase(&range);
-}
-
-void ApproximateSizeWorker::WorkComplete() {
-  Napi::HandleScope scope(Env());
-
-  DisposeStringOrBufferFromSlice(Env(), _persistent.Get("start"), range.start);
-  DisposeStringOrBufferFromSlice(Env(), _persistent.Get("end"), range.limit);
-  AsyncWorker::WorkComplete();
 }
 
 void ApproximateSizeWorker::OnOK () {
@@ -282,7 +265,7 @@ void ApproximateSizeWorker::OnOK () {
   napi_value globalVal;
   CHECK_NAPI_RESULT(napi_get_global(Env(), &globalVal));
 
-  _callback.Call(globalVal, {
+  Callback().Call(globalVal, {
     nullVal,
     returnValue,
   });

@@ -23,11 +23,14 @@
         ]
       , "dependencies": [
             "<(module_root_dir)/deps/leveldb/leveldb.gyp:leveldb"
-          , "<!(node -p \"require('node-api').gyp\")"
+          , "<!(node -p \"require('node-addon-api').gyp\")"
         ]
       , "include_dirs"  : [
-            "<!(node -p \"require('node-api').include\")"
+            "<!(node -p \"require('node-addon-api').include\")"
         ]
+      , "cflags!": [ "-fno-exceptions" ]
+      , "cflags_cc!": [ "-fno-exceptions" ]
+      , "xcode_settings": { "GCC_ENABLE_CPP_EXCEPTIONS": "YES" }
       , "sources": [
             "src/batch.cc"
           , "src/batch_async.cc"

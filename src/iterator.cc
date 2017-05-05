@@ -258,7 +258,7 @@ NAPI_METHOD(Iterator::Seek) {
     }
   }
 
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
+  return _this;
 }
 
 NAPI_METHOD(Iterator::Next) {
@@ -274,7 +274,7 @@ NAPI_METHOD(Iterator::Next) {
   CHECK_NAPI_RESULT(napi_typeof(env, args[0], &t));
   if (t != napi_function) {
     CHECK_NAPI_RESULT(napi_throw_error(env, "next() requires a callback argument"));
-    return;
+    return nullptr;
   }
 
   napi_value callback = args[0];
@@ -286,11 +286,11 @@ NAPI_METHOD(Iterator::Next) {
     , checkEndCallback
   );
   // persist to prevent accidental GC
-  worker->Persistent().Set("iterator", _this);
+  worker->Receiver().Set("iterator", _this);
   iterator->nexting = true;
   worker->Queue();
 
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
+  return _this;
 }
 
 NAPI_METHOD(Iterator::End) {
@@ -305,7 +305,7 @@ NAPI_METHOD(Iterator::End) {
   CHECK_NAPI_RESULT(napi_typeof(env, args[0], &t));
   if (t != napi_function) {
       CHECK_NAPI_RESULT(napi_throw_error(env, "end() requires a callback argument"));
-      return;
+      return nullptr;
   }
 
   if (!iterator->ended) {
@@ -317,7 +317,7 @@ NAPI_METHOD(Iterator::End) {
       , callback
     );
     // persist to prevent accidental GC
-    worker->Persistent().Set("iterator", _this);
+    worker->Receiver().Set("iterator", _this);
     iterator->ended = true;
 
     if (iterator->nexting) {
@@ -328,14 +328,14 @@ NAPI_METHOD(Iterator::End) {
     }
   }
 
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
+  return _this;
 }
 
 void Iterator::Init (napi_env env) {
   napi_property_descriptor methods [] = {
-    { "seek", Iterator::Seek },
-    { "next", Iterator::Next },
-    { "end", Iterator::End },
+    { "seek", nullptr, Iterator::Seek },
+    { "next", nullptr, Iterator::Next },
+    { "end", nullptr, Iterator::End },
   };
 
   napi_value ctor;
@@ -608,10 +608,10 @@ NAPI_METHOD(Iterator::New) {
 
   CHECK_NAPI_RESULT(napi_wrap(
     env, _this, iterator, Iterator::Destructor, nullptr, &iterator->handle));
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
+  return _this;
 }
 
-void Iterator::Destructor(void* obj, void* hint) {
+void Iterator::Destructor(napi_env env, void* obj, void* hint) {
   Iterator* iterator = static_cast<Iterator*>(obj);
   delete iterator;
 }

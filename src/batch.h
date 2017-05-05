@@ -29,7 +29,7 @@ private:
   leveldb::WriteBatch* batch;
   bool hasData; // keep track of whether we're writing data or not
 
-  static void Destructor(void* obj, void* hint);
+  static void Destructor(napi_env env, void* obj, void* hint);
 
   static NAPI_METHOD(New);
   static NAPI_METHOD(Put);

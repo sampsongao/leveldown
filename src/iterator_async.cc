@@ -81,7 +81,7 @@ void NextWorker::OnOK () {
   napi_value globalVal;
   CHECK_NAPI_RESULT(napi_get_global(Env(), &globalVal));
 
-  _callback.Call(globalVal, {
+  Callback().Call(globalVal, {
     nullVal,
     returnArray,
     // when ok === false all data has been read, so it's then finished
@@ -111,7 +111,7 @@ void EndWorker::OnOK () {
   napi_value globalVal;
   CHECK_NAPI_RESULT(napi_get_global(Env(), &globalVal));
 
-  _callback.Call(globalVal, {});
+  Callback().Call(globalVal, {});
 }
 
 } // namespace leveldown

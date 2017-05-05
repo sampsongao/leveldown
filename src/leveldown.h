@@ -9,7 +9,7 @@
 #include <leveldb/slice.h>
 
 #define NAPI_METHOD(name) \
-  void name(napi_env env, napi_callback_info info)
+  napi_value name(napi_env env, napi_callback_info info)
 
 namespace Napi {
   typedef FunctionReference Callback;
@@ -27,9 +27,7 @@ static inline size_t StringOrBufferLength(napi_env env, napi_value obj) {
     CHECK_NAPI_RESULT(napi_get_buffer_info(env, obj, nullptr, &sz));
   }
   else {
-    size_t length;
-    CHECK_NAPI_RESULT(napi_get_value_string_utf8(env, obj, nullptr, 0, &length));
-    sz = result;
+    CHECK_NAPI_RESULT(napi_get_value_string_utf8(env, obj, nullptr, 0, &sz));
   }
 
   return sz;
@@ -166,7 +164,7 @@ static inline void DisposeStringOrBufferFromSlice(
   if (argsLength == 0) {                                                       \
     CHECK_NAPI_RESULT(                                                         \
       napi_throw_error(env, #name "() requires a callback argument"));         \
-    return;                                                                    \
+    return nullptr;                                                            \
   }                                                                            \
   void* unwrapped;                                                             \
   CHECK_NAPI_RESULT(napi_unwrap(env, _this, &unwrapped));                      \

@@ -19,7 +19,7 @@
 
 namespace leveldown {
 
-void LevelDOWN (napi_env env, napi_callback_info info);
+napi_value LevelDOWN (napi_env env, napi_callback_info info);
 
 class Database {
 public:
@@ -66,10 +66,10 @@ private:
 
   std::map< uint32_t, leveldown::Iterator * > iterators;
 
-  static void WriteDoing(napi_work req);
-  static void WriteAfter(napi_work req);
+  static void WriteDoing(napi_async_work req);
+  static void WriteAfter(napi_async_work req);
 
-  static void Destructor (void* obj, void* hint);
+  static void Destructor(napi_env env, void* obj, void* hint);
 
   static NAPI_METHOD(New);
   static NAPI_METHOD(Open);

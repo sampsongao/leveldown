@@ -13,9 +13,10 @@
 
 namespace leveldown {
 
-void DestroyDB (napi_env env, napi_callback_info info) {
+napi_value DestroyDB (napi_env env, napi_callback_info info) {
+  size_t argc = 2;
   napi_value args[2];
-  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 2));
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, nullptr, nullptr));
 
   std::string location = std::move(Napi::String(env, args[0]));
 
@@ -28,15 +29,13 @@ void DestroyDB (napi_env env, napi_callback_info info) {
   );
 
   worker->Queue();
-
-  napi_value undefined;
-  CHECK_NAPI_RESULT(napi_get_undefined(env, &undefined));
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, undefined));
+  return nullptr;
 }
 
-void RepairDB (napi_env env, napi_callback_info info) {
+napi_value RepairDB (napi_env env, napi_callback_info info) {
+  size_t argc = 2;
   napi_value args[2];
-  CHECK_NAPI_RESULT(napi_get_cb_args(env, info, args, 2));
+  CHECK_NAPI_RESULT(napi_get_cb_info(env, info, &argc, args, nullptr, nullptr));
 
   std::string location = std::move(Napi::String(env, args[0]));
 
@@ -49,10 +48,7 @@ void RepairDB (napi_env env, napi_callback_info info) {
   );
 
   worker->Queue();
-
-  napi_value undefined;
-  CHECK_NAPI_RESULT(napi_get_undefined(env, &undefined));
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, undefined));
+  return nullptr;
 }
 
 void Init(napi_env env, napi_value target, napi_value module, void* priv) {

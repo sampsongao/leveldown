@@ -21,7 +21,7 @@ Batch::~Batch () {
   delete batch;
 }
 
-void Batch::Destructor(void* obj, void* hint) {
+void Batch::Destructor(napi_env env, void* obj, void* hint) {
   Batch* batch = static_cast<Batch*>(obj);
   delete batch;
 }
@@ -32,10 +32,10 @@ leveldb::Status Batch::Write () {
 
 void Batch::Init (napi_env env) {
   napi_property_descriptor methods[] = {
-    { "put", Batch::Put },
-    { "del", Batch::Del },
-    { "clear", Batch::Clear },
-    { "write", Batch::Write },
+    { "put", nullptr, Batch::Put },
+    { "del", nullptr, Batch::Del },
+    { "clear", nullptr, Batch::Clear },
+    { "write", nullptr, Batch::Write },
   };
 
   napi_value ctor;
@@ -66,7 +66,7 @@ NAPI_METHOD(Batch::New) {
   Batch* batch = new Batch(database, sync);
 
   CHECK_NAPI_RESULT(napi_wrap(env, _this, batch, Batch::Destructor, nullptr, nullptr));
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
+  return _this;
 }
 
 napi_value Batch::NewInstance (
@@ -115,7 +115,7 @@ NAPI_METHOD(Batch::Put) {
   DisposeStringOrBufferFromSlice(env, keyBuffer, key);
   DisposeStringOrBufferFromSlice(env, valueBuffer, value);
 
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
+  return _this;
 }
 
 NAPI_METHOD(Batch::Del) {
@@ -136,7 +136,7 @@ NAPI_METHOD(Batch::Del) {
 
   DisposeStringOrBufferFromSlice(env, keyBuffer, key);
 
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
+  return _this;
 }
 
 NAPI_METHOD(Batch::Clear) {
@@ -149,7 +149,7 @@ NAPI_METHOD(Batch::Clear) {
   batch->batch->Clear();
   batch->hasData = false;
 
-  CHECK_NAPI_RESULT(napi_set_return_value(env, info, _this));
+  return _this;
 }
 
 NAPI_METHOD(Batch::Write) {
@@ -165,11 +165,13 @@ NAPI_METHOD(Batch::Write) {
     napi_value callback = args[0];
     BatchWriteWorker* worker  = new BatchWriteWorker(batch, env, callback);
     // persist to prevent accidental GC
-    worker->Persistent().Set("batch", _this);
+    worker->Receiver().Set("batch", _this);
     worker->Queue();
   } else {
     LD_RUN_CALLBACK(args[0], 0, NULL);
   }
+
+  return nullptr;
 }
 
 } // namespace leveldown

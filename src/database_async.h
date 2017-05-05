@@ -49,7 +49,6 @@ public:
 
   virtual ~CloseWorker ();
   virtual void Execute ();
-  virtual void WorkComplete ();
 };
 
 class IOWorker    : public AsyncWorker {
@@ -63,7 +62,6 @@ public:
   );
 
   virtual ~IOWorker ();
-  virtual void WorkComplete ();
 
 protected:
   leveldb::Slice key;
@@ -124,7 +122,6 @@ public:
 
   virtual ~WriteWorker ();
   virtual void Execute ();
-  virtual void WorkComplete ();
 
 private:
   leveldb::Slice value;
@@ -163,7 +160,6 @@ public:
   virtual ~ApproximateSizeWorker ();
   virtual void Execute ();
   virtual void OnOK ();
-  virtual void WorkComplete ();
 
   private:
     leveldb::Range range;
