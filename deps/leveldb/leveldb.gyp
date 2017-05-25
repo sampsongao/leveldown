@@ -125,6 +125,9 @@
                   , '-Wno-unused-variable'
                   , '-Wno-unused-function'
                 ]
+              , 'CLANG_CXX_LIBRARY': 'libc++'
+              , 'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'
+              , 'MACOSX_DEPLOYMENT_TARGET': '10.7'
             }
         }]
     ]
