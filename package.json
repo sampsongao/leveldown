@@ -50,7 +50,7 @@
   },
   "scripts": {
     "install": "prebuild --install",
-    "test": "node --napi-modules node_modules/tape/bin/tape test/*-test.js | faucet",
+    "test": "tape test/*-test.js | faucet",
     "rebuild": "prebuild --compile",
     "prebuild": "prebuild --all --strip --verbose"
   },
