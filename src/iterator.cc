@@ -273,7 +273,7 @@ NAPI_METHOD(Iterator::Next) {
   napi_valuetype t;
   CHECK_NAPI_RESULT(napi_typeof(env, args[0], &t));
   if (t != napi_function) {
-    CHECK_NAPI_RESULT(napi_throw_error(env, "next() requires a callback argument"));
+    CHECK_NAPI_RESULT(napi_throw_error(env, nullptr, "next() requires a callback argument"));
     return nullptr;
   }
 
@@ -304,7 +304,7 @@ NAPI_METHOD(Iterator::End) {
   napi_valuetype t;
   CHECK_NAPI_RESULT(napi_typeof(env, args[0], &t));
   if (t != napi_function) {
-      CHECK_NAPI_RESULT(napi_throw_error(env, "end() requires a callback argument"));
+      CHECK_NAPI_RESULT(napi_throw_error(env, nullptr, "end() requires a callback argument"));
       return nullptr;
   }
 

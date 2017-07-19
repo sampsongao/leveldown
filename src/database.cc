@@ -562,7 +562,7 @@ NAPI_METHOD(Database::Iterator) {
   CHECK_NAPI_RESULT(napi_is_exception_pending(env, &r));
   if (r) {
     // NB: node::FatalException can segfault here if there is no room on stack.
-    CHECK_NAPI_RESULT(napi_throw_error(env, "Fatal Error in Database::Iterator!"));
+    CHECK_NAPI_RESULT(napi_throw_error(env, nullptr, "Fatal Error in Database::Iterator!"));
   }
 
   CHECK_NAPI_RESULT(napi_unwrap(env, iteratorHandle, &unwrapped));

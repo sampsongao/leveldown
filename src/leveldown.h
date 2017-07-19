@@ -125,9 +125,9 @@ static inline void DisposeStringOrBufferFromSlice(
       napi_value str;                                                          \
       napi_value err;                                                          \
       CHECK_NAPI_RESULT(napi_create_string(env, msg, &str));                   \
-      CHECK_NAPI_RESULT(napi_create_error(env, str, err));                     \
+      CHECK_NAPI_RESULT(napi_create_error(env, nullptr, str, err));                     \
       napi_value argv[] = {                                                    \
-        napi_create_error(env, napi_create_string(env, msg))                   \
+        napi_create_error(env, nullptr, napi_create_string(env, msg))                   \
       };                                                                       \
       LD_RUN_CALLBACK(callback, 1, argv)                                       \
       napi_value undefined;                                                    \
@@ -136,7 +136,7 @@ static inline void DisposeStringOrBufferFromSlice(
       return;                                                                  \
     }                                                                          \
   }                                                                            \
-  CHECK_NAPI_RESULT(napi_throw_error(env, msg));                               \
+  CHECK_NAPI_RESULT(napi_throw_error(env, nullptr, msg));                               \
   return;
 
 #define LD_RUN_CALLBACK(callback, argc, argv)                                  \
@@ -163,7 +163,7 @@ static inline void DisposeStringOrBufferFromSlice(
     napi_get_cb_info(env, info, &argsLength, args, &_this, nullptr));          \
   if (argsLength == 0) {                                                       \
     CHECK_NAPI_RESULT(                                                         \
-      napi_throw_error(env, #name "() requires a callback argument"));         \
+      napi_throw_error(env, nullptr, #name "() requires a callback argument"));         \
     return nullptr;                                                            \
   }                                                                            \
   void* unwrapped;                                                             \
@@ -196,7 +196,7 @@ static inline void DisposeStringOrBufferFromSlice(
   }                                                                            \
   if (!callback) {                                                             \
     CHECK_NAPI_RESULT(                                                         \
-      napi_throw_error(env, #name "() requires a callback argument"));         \
+      napi_throw_error(env, nullptr, #name "() requires a callback argument"));         \
   }
 
 #define LD_METHOD_SETUP_COMMON_ONEARG(name) LD_METHOD_SETUP_COMMON(name, -1, 0)
