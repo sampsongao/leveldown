@@ -257,7 +257,7 @@ void ApproximateSizeWorker::OnOK () {
   Napi::HandleScope scope(Env());
 
   napi_value returnValue;
-  CHECK_NAPI_RESULT(napi_create_number(Env(), (double)size, &returnValue));
+  CHECK_NAPI_RESULT(napi_create_double(Env(), (double)size, &returnValue));
 
   napi_value nullVal;
   CHECK_NAPI_RESULT(napi_get_null(Env(), &nullVal));

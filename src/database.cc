@@ -549,7 +549,7 @@ NAPI_METHOD(Database::Iterator) {
 
   napi_value iteratorHandle;
   napi_value idVal;
-  CHECK_NAPI_RESULT(napi_create_number(env, id, &idVal));
+  CHECK_NAPI_RESULT(napi_create_double(env, id, &idVal));
 
   iteratorHandle = Iterator::NewInstance(
     env
