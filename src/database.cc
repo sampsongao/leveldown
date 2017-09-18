@@ -147,7 +147,7 @@ void Database::Init (napi_env env) {
   };
 
   napi_value ctor;
-  CHECK_NAPI_RESULT(napi_define_class(env, "Database", Database::New, nullptr, 9, methods, &ctor));
+  CHECK_NAPI_RESULT(napi_define_class(env, "Database", -1, Database::New, nullptr, 9, methods, &ctor));
   CHECK_NAPI_RESULT(napi_create_reference(env, ctor, 1, &database_constructor));
 }
 
@@ -271,13 +271,14 @@ NAPI_METHOD(Database::Close) {
             napi_value end;
             CHECK_NAPI_RESULT(napi_get_named_property(env, iteratorHandle, "end", &end));
             napi_value emptyFn;
-            CHECK_NAPI_RESULT(napi_create_function(env, "end", EmptyMethod, nullptr, &emptyFn));
+            CHECK_NAPI_RESULT(napi_create_function(env, "end", -1, EmptyMethod, nullptr, &emptyFn));
             napi_value argv [] = {
                 emptyFn // empty callback
             };
             napi_value unused;
             CHECK_NAPI_RESULT(napi_make_callback(
               env
+              , nullptr
               , iteratorHandle
               , end
               , 1

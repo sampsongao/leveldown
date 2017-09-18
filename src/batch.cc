@@ -39,7 +39,7 @@ void Batch::Init (napi_env env) {
   };
 
   napi_value ctor;
-  CHECK_NAPI_RESULT(napi_define_class(env, "Batch", Batch::New, nullptr, 4, methods, &ctor));
+  CHECK_NAPI_RESULT(napi_define_class(env, "Batch", -1, Batch::New, nullptr, 4, methods, &ctor));
   CHECK_NAPI_RESULT(napi_create_reference(env, ctor, 1, &batch_constructor));
 }
 

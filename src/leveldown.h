@@ -145,7 +145,7 @@ static inline void DisposeStringOrBufferFromSlice(
     CHECK_NAPI_RESULT(napi_get_global(env, &g));                               \
     napi_value unused;                                                         \
     CHECK_NAPI_RESULT(                                                         \
-      napi_make_callback(env, g, callback, argc, argv, &unused));              \
+      napi_make_callback(env, NULL, g, callback, argc, argv, &unused));        \
   } while(0)
 
 /* LD_METHOD_SETUP_COMMON setup the following objects:

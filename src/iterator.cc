@@ -339,7 +339,7 @@ void Iterator::Init (napi_env env) {
   };
 
   napi_value ctor;
-  CHECK_NAPI_RESULT(napi_define_class(env, "Iterator", Iterator::New, nullptr, 3, methods, &ctor));
+  CHECK_NAPI_RESULT(napi_define_class(env, "Iterator", -1, Iterator::New, nullptr, 3, methods, &ctor));
   CHECK_NAPI_RESULT(napi_create_reference(env, ctor, 1, &iterator_constructor));
 }
 
