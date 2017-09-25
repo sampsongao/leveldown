@@ -120,14 +120,14 @@ static inline void DisposeStringOrBufferFromSlice(
 #define LD_RETURN_CALLBACK_OR_ERROR(callback, msg)                             \
   if (callback != nullptr) {                                                   \
     napi_valuetype t;                                                          \
-    CHECK_NAPI_RESULT(napi_typeof(env, callback, &t));              \
+    CHECK_NAPI_RESULT(napi_typeof(env, callback, &t));                         \
     if (t == napi_function) {                                                  \
       napi_value str;                                                          \
       napi_value err;                                                          \
-      CHECK_NAPI_RESULT(napi_create_string(env, msg, &str));                   \
-      CHECK_NAPI_RESULT(napi_create_error(env, nullptr, str, err));                     \
+      CHECK_NAPI_RESULT(napi_create_string_utf8(env, msg, strlen(msg), &str)); \
+      CHECK_NAPI_RESULT(napi_create_error(env, nullptr, str, &err));           \
       napi_value argv[] = {                                                    \
-        napi_create_error(env, nullptr, napi_create_string(env, msg))                   \
+        err,                                                                   \
       };                                                                       \
       LD_RUN_CALLBACK(callback, 1, argv)                                       \
       napi_value undefined;                                                    \
@@ -136,7 +136,8 @@ static inline void DisposeStringOrBufferFromSlice(
       return;                                                                  \
     }                                                                          \
   }                                                                            \
-  CHECK_NAPI_RESULT(napi_throw_error(env, nullptr, msg));                               \
+  napi_value err;                                                              \
+  CHECK_NAPI_RESULT(napi_throw_error(env, nullptr, msg, &err));                \
   return;
 
 #define LD_RUN_CALLBACK(callback, argc, argv)                                  \
